@@ -210,10 +210,15 @@ function parseFoodCSV(csv) {
         const cols = parseCSVLine(line);
         return {
             name: cols[0] || '',
-            address: cols[1] || '',
-            type: cols[2] || '',
-            recommend: cols[3] || '',
-            notes: cols[4] || ''
+            hours: cols[1] || '',
+            address: cols[2] || '',
+            type: cols[3] || '',
+            price: cols[4] || '',
+            rating: cols[5] || '',
+            queue: cols[6] || '',
+            recommend: cols[7] || '',
+            area: cols[8] || '',
+            notes: cols[9] || ''
         };
     }).filter(item => item.name);
 }
@@ -516,15 +521,27 @@ function renderFilteredFoodList() {
         return;
     }
 
-    container.innerHTML = filtered.map(item => `
-        <div class="place-card" onclick="navigateTo('${(item.address || item.name).replace(/'/g, "\\'")}')">
-            <div class="place-info">
-                <h3>${item.name}</h3>
-                <p>${item.recommend ? `⭐ ${item.recommend}` : ''}${item.notes ? ` · ${item.notes}` : ''}</p>
+    container.innerHTML = filtered.map(item => {
+        const tags = [
+            item.price ? `💰 ${item.price}` : '',
+            item.rating ? `⭐ ${item.rating}` : '',
+            item.queue ? `🕐 ${item.queue}` : '',
+            item.area ? `📍 ${item.area}` : '',
+            item.hours ? `🕒 ${item.hours}` : ''
+        ].filter(Boolean).join('　');
+
+        return `
+            <div class="place-card food-card" onclick="navigateTo('${(item.address || item.name).replace(/'/g, "\\'")}')">
+                <div class="place-info">
+                    <h3>${item.name}</h3>
+                    ${tags ? `<p class="food-tags">${tags}</p>` : ''}
+                    ${item.recommend ? `<p class="food-recommend">🍽️ ${item.recommend}</p>` : ''}
+                    ${item.notes ? `<p class="food-notes">${item.notes}</p>` : ''}
+                </div>
+                ${item.type ? `<span class="place-type">${getFoodEmoji(item.type)} ${item.type}</span>` : ''}
             </div>
-            ${item.type ? `<span class="place-type">${getFoodEmoji(item.type)} ${item.type}</span>` : ''}
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function getFoodEmoji(type) {
@@ -574,10 +591,18 @@ function shuffleFood() {
     $('#food-pick').style.display = 'block';
     $('#food-pick-name').textContent = pick.name;
     $('#food-pick-type').textContent = pick.type ? `${getFoodEmoji(pick.type)} ${pick.type}` : '';
-    $('#food-pick-notes').textContent = [
-        pick.recommend ? `⭐ 推薦：${pick.recommend}` : '',
+
+    const details = [
+        pick.price ? `💰 ${pick.price}` : '',
+        pick.rating ? `⭐ ${pick.rating}` : '',
+        pick.queue ? `🕐 ${pick.queue}` : '',
+        pick.area ? `📍 ${pick.area}` : '',
+        pick.hours ? `🕒 ${pick.hours}` : '',
+        pick.recommend ? `🍽️ ${pick.recommend}` : '',
         pick.notes ? `📝 ${pick.notes}` : ''
-    ].filter(Boolean).join(' · ');
+    ].filter(Boolean).join('　');
+
+    $('#food-pick-notes').textContent = details;
     $('#navigate-food-pick').onclick = () => navigateTo(pick.address || pick.name);
 
     // Animation

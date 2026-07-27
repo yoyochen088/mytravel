@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDateSelector();
     initButtons();
     initAI();
+    initPullToRefresh();
     registerServiceWorker();
     // User select & data loading
     initUserSelect();
@@ -731,10 +732,34 @@ function navigateTo(destination) {
 
 // --- Buttons ---
 function initButtons() {
-    $('#refresh-btn').addEventListener('click', () => loadData());
+    $('#refresh-btn').addEventListener('click', () => refreshAll());
     $('#shuffle-btn').addEventListener('click', () => shuffleRandom());
     $('#food-shuffle-btn').addEventListener('click', () => shuffleFood());
     $('#switch-user-btn').addEventListener('click', () => switchUser());
+}
+
+async function refreshAll() {
+    if (!currentUser) return;
+    showLoading(true);
+
+    try {
+        // Re-fetch user config from Apps Script
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(currentUser));
+        const config = await res.json();
+        if (!config.error) {
+            localStorage.setItem('userConfig_' + currentUser, JSON.stringify(config));
+            localStorage.setItem('geminiApiKey', config.apiKey || '');
+            applyUserConfig(config);
+            // Refresh tools display
+            initTools();
+        }
+    } catch (e) {
+        console.log('重新取得設定失敗:', e);
+    }
+
+    // Reload sheet data
+    await loadData();
+    showLoading(false);
 }
 
 // --- Utilities ---
@@ -773,6 +798,43 @@ function registerServiceWorker() {
     }
 }
 
+// --- Pull to Refresh ---
+function initPullToRefresh() {
+    let startY = 0;
+    let pulling = false;
+    const indicator = $('#pull-indicator');
+
+    document.addEventListener('touchstart', (e) => {
+        const activeTab = document.querySelector('.tab-content.active');
+        if (activeTab && activeTab.scrollTop === 0) {
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!pulling) return;
+        const diff = e.touches[0].clientY - startY;
+        if (diff > 60) {
+            indicator.classList.add('visible');
+        } else {
+            indicator.classList.remove('visible');
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', async () => {
+        if (!pulling) return;
+        pulling = false;
+        if (indicator.classList.contains('visible')) {
+            indicator.querySelector('span').textContent = '🔄 更新中...';
+            indicator.classList.add('loading');
+            await refreshAll();
+            indicator.classList.remove('visible', 'loading');
+            indicator.querySelector('span').textContent = '↓ 下拉更新';
+        }
+    });
+}
+
 
 // ==================== 工具 ====================
 
@@ -809,6 +871,11 @@ function initCountdown() {
             tripStartDate: startVal,
             tripEndDate: endVal
         });
+
+        // Show confirmation
+        const btn = $('#save-trip-dates');
+        btn.textContent = '✅ 已儲存';
+        setTimeout(() => { btn.textContent = '儲存'; }, 2000);
     });
 }
 

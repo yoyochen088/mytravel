@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a73e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="旅遊助手">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
+    <title>旅遊助手</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>🗺️ 旅遊助手</h1>
+            <button id="refresh-btn" class="icon-btn" title="重新整理">🔄</button>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="now">現在</button>
+            <button class="tab-btn" data-tab="timeline">時間軸</button>
+            <button class="tab-btn" data-tab="random">隨機探索</button>
+            <button class="tab-btn" data-tab="settings">設定</button>
+        </nav>
+
+        <!-- Now Tab -->
+        <section id="tab-now" class="tab-content active">
+            <div class="current-info">
+                <div class="time-display">
+                    <span id="current-time"></span>
+                    <span id="current-date"></span>
+                </div>
+                <div id="current-location" class="location-display">
+                    📍 取得位置中...
+                </div>
+            </div>
+
+            <div id="current-activity" class="card highlight-card">
+                <div class="card-label">現在行程</div>
+                <div class="card-content">
+                    <h2 id="now-place">載入中...</h2>
+                    <p id="now-time-range"></p>
+                    <p id="now-notes"></p>
+                </div>
+                <button id="navigate-now" class="nav-btn">🧭 導航到這裡</button>
+            </div>
+
+            <div id="next-activity" class="card">
+                <div class="card-label">下一站</div>
+                <div class="card-content">
+                    <h2 id="next-place">-</h2>
+                    <p id="next-time-range"></p>
+                    <p id="next-notes"></p>
+                </div>
+                <button id="navigate-next" class="nav-btn">🧭 導航到這裡</button>
+            </div>
+        </section>
+
+        <!-- Timeline Tab -->
+        <section id="tab-timeline" class="tab-content">
+            <div class="date-selector">
+                <button id="prev-day" class="icon-btn">◀</button>
+                <span id="selected-date"></span>
+                <button id="next-day" class="icon-btn">▶</button>
+            </div>
+            <div id="timeline-list" class="timeline">
+            </div>
+        </section>
+
+        <!-- Random Tab -->
+        <section id="tab-random" class="tab-content">
+            <div class="random-header">
+                <p>以下是你的彈性景點，不綁定時間，隨時可以去！</p>
+                <button id="shuffle-btn" class="action-btn">🎲 隨機推薦一個</button>
+            </div>
+            <div id="random-pick" class="card highlight-card" style="display:none;">
+                <div class="card-label">🎯 推薦你去</div>
+                <div class="card-content">
+                    <h2 id="random-place"></h2>
+                    <p id="random-notes"></p>
+                </div>
+                <button id="navigate-random" class="nav-btn">🧭 導航到這裡</button>
+            </div>
+            <div id="random-list" class="place-list">
+            </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section id="tab-settings" class="tab-content">
+            <div class="settings-form">
+                <div class="setting-item">
+                    <label for="sheet-id">Google Sheets 連結或 ID</label>
+                    <input type="text" id="sheet-id" placeholder="貼上 Google Sheets 網址或 ID">
+                    <p class="hint">直接貼試算表網址即可，例如：https://docs.google.com/spreadsheets/d/xxxxx/edit</p>
+                </div>
+                <div class="setting-item">
+                    <label for="sheet-name-schedule">行程表分頁名稱</label>
+                    <input type="text" id="sheet-name-schedule" placeholder="行程表" value="行程表">
+                </div>
+                <div class="setting-item">
+                    <label for="sheet-name-random">隨機景點分頁名稱</label>
+                    <input type="text" id="sheet-name-random" placeholder="隨機景點" value="隨機景點">
+                </div>
+                <button id="save-settings" class="action-btn">💾 儲存設定</button>
+                <button id="test-connection" class="action-btn secondary">🔗 測試連線</button>
+                <div id="settings-status"></div>
+
+                <div class="setting-section">
+                    <h3>📋 設定說明</h3>
+                    <div class="format-guide">
+                        <p class="hint" style="margin-bottom:12px;">
+                            ① 建立 Google Sheets<br>
+                            ② 右上角「共用」→「知道連結的人都可以檢視」<br>
+                            ③ 複製網址貼到上面就好！
+                        </p>
+                        <h4>📅 行程表分頁欄位：</h4>
+                        <table class="guide-table">
+                            <tr><th>日期</th><th>開始時間</th><th>結束時間</th><th>地點</th><th>地址</th><th>備註</th></tr>
+                            <tr><td>2026/7/28</td><td>09:00</td><td>11:00</td><td>台北101</td><td>台北市信義區信義路五段7號</td><td>觀景台記得預約</td></tr>
+                        </table>
+                        <h4>🎲 隨機景點分頁欄位：</h4>
+                        <table class="guide-table">
+                            <tr><th>地點</th><th>地址</th><th>類型</th><th>備註</th></tr>
+                            <tr><td>象山步道</td><td>台北市信義區信義路五段150巷</td><td>自然</td><td>日落很美</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading -->
+        <div id="loading" class="loading-overlay" style="display:none;">
+            <div class="spinner"></div>
+            <p>載入資料中...</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

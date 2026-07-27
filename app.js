@@ -68,42 +68,25 @@ function initLocation() {
     }
 }
 
-// --- Settings ---
+// --- Settings (hardcoded) ---
+const SHEET_ID = '1vZYYdHuaeXf0yCcln23dEvFXOYLJE_pSpkSftkKhn48';
+const SHEET_NAME_SCHEDULE = localStorage.getItem('sheetNameSchedule') || '行程表';
+const SHEET_NAME_RANDOM = localStorage.getItem('sheetNameRandom') || '隨機景點';
+const SHEET_NAME_FOOD = localStorage.getItem('sheetNameFood') || '美食';
+
 function loadSettings() {
-    const sheetId = localStorage.getItem('sheetId') || '';
-    const sheetNameSchedule = localStorage.getItem('sheetNameSchedule') || '行程表';
-    const sheetNameRandom = localStorage.getItem('sheetNameRandom') || '隨機景點';
-    const sheetNameFood = localStorage.getItem('sheetNameFood') || '美食';
-    $('#sheet-id').value = sheetId;
-    $('#sheet-name-schedule').value = sheetNameSchedule;
-    $('#sheet-name-random').value = sheetNameRandom;
-    $('#sheet-name-food').value = sheetNameFood;
+    // No-op, settings are hardcoded
 }
 
 function saveSettings() {
-    const rawInput = $('#sheet-id').value.trim();
-    const sheetId = extractSheetId(rawInput);
-
-    if (!sheetId && rawInput) {
-        showStatus('❌ 無法辨識連結，請貼上正確的 Google Sheets 網址或 ID', 'error');
-        return;
-    }
-
-    localStorage.setItem('sheetId', sheetId);
-    localStorage.setItem('sheetNameSchedule', $('#sheet-name-schedule').value.trim() || '行程表');
-    localStorage.setItem('sheetNameRandom', $('#sheet-name-random').value.trim() || '隨機景點');
-    localStorage.setItem('sheetNameFood', $('#sheet-name-food').value.trim() || '美食');
-    showStatus('✅ 設定已儲存！', 'success');
-    loadData();
+    // No-op
 }
 
 function extractSheetId(input) {
     if (!input) return '';
-    // If it's already just an ID (no slashes, no spaces)
     if (/^[a-zA-Z0-9_-]+$/.test(input) && input.length > 20) {
         return input;
     }
-    // Extract from URL: https://docs.google.com/spreadsheets/d/SHEET_ID/...
     const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
     if (match) return match[1];
     return '';
@@ -113,30 +96,13 @@ function getSheetCsvUrl(sheetId, sheetName) {
     return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 }
 
-function showStatus(msg, type) {
-    const el = $('#settings-status');
-    el.textContent = msg;
-    el.className = type === 'success' ? 'status-success' : 'status-error';
-    setTimeout(() => { el.textContent = ''; el.className = ''; }, 3000);
-}
-
 // --- Data Loading ---
 async function loadData() {
-    const sheetId = localStorage.getItem('sheetId');
-    const sheetNameSchedule = localStorage.getItem('sheetNameSchedule') || '行程表';
-    const sheetNameRandom = localStorage.getItem('sheetNameRandom') || '隨機景點';
-    const sheetNameFood = localStorage.getItem('sheetNameFood') || '美食';
-
-    if (!sheetId) {
-        showEmptyState();
-        return;
-    }
-
     showLoading(true);
 
     try {
         // Load schedule
-        const scheduleUrl = getSheetCsvUrl(sheetId, sheetNameSchedule);
+        const scheduleUrl = getSheetCsvUrl(SHEET_ID, SHEET_NAME_SCHEDULE);
         const scheduleRes = await fetch(scheduleUrl);
         if (!scheduleRes.ok) throw new Error(`HTTP ${scheduleRes.status}`);
         const scheduleCsv = await scheduleRes.text();
@@ -144,7 +110,7 @@ async function loadData() {
 
         // Load random places
         try {
-            const randomUrl = getSheetCsvUrl(sheetId, sheetNameRandom);
+            const randomUrl = getSheetCsvUrl(SHEET_ID, SHEET_NAME_RANDOM);
             const randomRes = await fetch(randomUrl);
             if (randomRes.ok) {
                 const randomCsv = await randomRes.text();
@@ -156,7 +122,7 @@ async function loadData() {
 
         // Load food list
         try {
-            const foodUrl = getSheetCsvUrl(sheetId, sheetNameFood);
+            const foodUrl = getSheetCsvUrl(SHEET_ID, SHEET_NAME_FOOD);
             const foodRes = await fetch(foodUrl);
             if (foodRes.ok) {
                 const foodCsv = await foodRes.text();
@@ -172,7 +138,6 @@ async function loadData() {
         updateFoodList();
     } catch (err) {
         console.error('載入資料失敗:', err);
-        showStatus('❌ 載入失敗，請確認試算表已設為公開檢視', 'error');
     }
 
     showLoading(false);
@@ -639,33 +604,8 @@ function navigateTo(destination) {
 // --- Buttons ---
 function initButtons() {
     $('#refresh-btn').addEventListener('click', () => loadData());
-    $('#save-settings').addEventListener('click', () => saveSettings());
-    $('#test-connection').addEventListener('click', () => testConnection());
     $('#shuffle-btn').addEventListener('click', () => shuffleRandom());
     $('#food-shuffle-btn').addEventListener('click', () => shuffleFood());
-}
-
-async function testConnection() {
-    const rawInput = $('#sheet-id').value.trim();
-    const sheetId = extractSheetId(rawInput);
-
-    if (!sheetId) {
-        showStatus('❌ 請先輸入 Google Sheets 連結或 ID', 'error');
-        return;
-    }
-
-    const sheetName = $('#sheet-name-schedule').value.trim() || '行程表';
-
-    try {
-        const url = getSheetCsvUrl(sheetId, sheetName);
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        const lines = text.split('\n').filter(l => l.trim());
-        showStatus(`✅ 連線成功！「${sheetName}」分頁找到 ${lines.length - 1} 筆資料`, 'success');
-    } catch (err) {
-        showStatus('❌ 連線失敗，請確認試算表已設為「知道連結的人可以檢視」', 'error');
-    }
 }
 
 // --- Utilities ---
@@ -693,14 +633,6 @@ function timeToMinutes(timeStr) {
 
 function showLoading(show) {
     $('#loading').style.display = show ? 'flex' : 'none';
-}
-
-function showEmptyState() {
-    $('#now-place').textContent = '請先設定 Google Sheets';
-    $('#now-time-range').textContent = '';
-    $('#now-notes').textContent = '前往「設定」頁面貼上你的試算表連結';
-    $('#navigate-now').style.display = 'none';
-    $('#next-activity').style.display = 'none';
 }
 
 // --- Service Worker ---

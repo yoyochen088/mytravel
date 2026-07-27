@@ -25,12 +25,20 @@ body {
     color: var(--text);
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }
 
 #app {
     max-width: 480px;
     margin: 0 auto;
-    padding-bottom: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 /* Header */
@@ -41,9 +49,7 @@ body {
     padding: 16px 20px;
     background: var(--primary);
     color: white;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    flex-shrink: 0;
 }
 
 .app-header h1 {
@@ -70,9 +76,7 @@ body {
     display: flex;
     background: white;
     border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 56px;
-    z-index: 99;
+    flex-shrink: 0;
 }
 
 .tab-btn {
@@ -97,11 +101,16 @@ body {
 .tab-content {
     display: none;
     padding: 16px;
+    padding-bottom: 32px;
     animation: fadeIn 0.3s ease;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .tab-content.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes fadeIn {

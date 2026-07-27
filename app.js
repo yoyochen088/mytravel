@@ -85,6 +85,7 @@ async function initUserSelect() {
                 currentUser = saved;
                 applyUserConfig(config);
                 showMainApp();
+                loadData();
                 return;
             }
         } catch (e) {}
@@ -147,6 +148,14 @@ function applyUserConfig(config) {
     window.SHEET_NAME_SCHEDULE = config.sheetNameSchedule || '行程表';
     window.SHEET_NAME_RANDOM = config.sheetNameRandom || '隨機景點';
     window.SHEET_NAME_FOOD = config.sheetNameFood || '美食';
+
+    // Apply trip dates
+    localStorage.setItem('tripStartDate', config.tripStartDate || '');
+    localStorage.setItem('tripEndDate', config.tripEndDate || '');
+
+    // Apply hotel info
+    localStorage.setItem('hotelAddress', config.hotelAddress || '');
+    localStorage.setItem('hotelPhone', config.hotelPhone || '');
 }
 
 function showMainApp() {
@@ -785,12 +794,20 @@ function initCountdown() {
     endInput.value = savedEnd;
 
     updateCountdown();
-    setInterval(updateCountdown, 60000); // Update every minute
+    setInterval(updateCountdown, 60000);
 
-    $('#save-trip-dates').addEventListener('click', () => {
-        localStorage.setItem('tripStartDate', startInput.value);
-        localStorage.setItem('tripEndDate', endInput.value);
+    $('#save-trip-dates').addEventListener('click', async () => {
+        const startVal = startInput.value;
+        const endVal = endInput.value;
+        localStorage.setItem('tripStartDate', startVal);
+        localStorage.setItem('tripEndDate', endVal);
         updateCountdown();
+
+        // Save to Apps Script
+        await saveUserInfoToServer({
+            tripStartDate: startVal,
+            tripEndDate: endVal
+        });
     });
 }
 
@@ -907,7 +924,7 @@ function initEmergency() {
     $('#edit-hotel-address').value = savedAddress;
     $('#edit-hotel-phone').value = savedPhone;
 
-    $('#save-emergency').addEventListener('click', () => {
+    $('#save-emergency').addEventListener('click', async () => {
         const address = $('#edit-hotel-address').value.trim();
         const phone = $('#edit-hotel-phone').value.trim();
         localStorage.setItem('hotelAddress', address);
@@ -915,6 +932,12 @@ function initEmergency() {
         $('#hotel-address').textContent = address || '未設定';
         $('#hotel-phone').textContent = phone || '未設定';
         $('#hotel-phone').href = phone ? `tel:${phone}` : '';
+
+        // Save to Apps Script
+        await saveUserInfoToServer({
+            hotelAddress: address,
+            hotelPhone: phone
+        });
     });
 }
 
@@ -1000,6 +1023,33 @@ function updatePackingProgress(done, total) {
     $('#packing-progress-text').textContent = `${done}/${total}`;
     const pct = total > 0 ? (done / total * 100) : 0;
     $('#packing-progress-bar').style.width = `${pct}%`;
+}
+
+// --- Save to Apps Script ---
+async function saveUserInfoToServer(fields) {
+    if (!currentUser) return;
+
+    try {
+        await fetch(CONFIG_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'updateUserInfo',
+                user: currentUser,
+                fields: fields
+            }),
+            mode: 'no-cors' // Apps Script redirects, so use no-cors
+        });
+
+        // Also update local cached config
+        try {
+            const cached = JSON.parse(localStorage.getItem('userConfig_' + currentUser) || '{}');
+            Object.assign(cached, fields);
+            localStorage.setItem('userConfig_' + currentUser, JSON.stringify(cached));
+        } catch (e) {}
+    } catch (err) {
+        console.error('儲存到伺服器失敗:', err);
+    }
 }
 
 

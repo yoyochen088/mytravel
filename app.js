@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadData();
     initDateSelector();
     initButtons();
+    initAI();
     registerServiceWorker();
 });
 
@@ -667,4 +668,187 @@ function registerServiceWorker() {
             .then(reg => console.log('SW registered:', reg.scope))
             .catch(err => console.log('SW registration failed:', err));
     }
+}
+
+
+// ==================== AI 助手 (Gemini 3.1 Flash Lite) ====================
+
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
+
+function getGeminiEndpoint() {
+    const key = localStorage.getItem('geminiApiKey') || '';
+    return `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+}
+
+let aiChatHistory = [];
+
+function initAI() {
+    const input = $('#ai-input');
+    const sendBtn = $('#ai-send');
+
+    sendBtn.addEventListener('click', () => sendAIMessage());
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            sendAIMessage();
+        }
+    });
+
+    // Long press header to reset API key
+    let pressTimer;
+    const header = $('.app-header h1');
+    header.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(() => {
+            const key = prompt('設定 Gemini API Key：', localStorage.getItem('geminiApiKey') || '');
+            if (key !== null) {
+                localStorage.setItem('geminiApiKey', key.trim());
+                alert('API Key 已更新！');
+            }
+        }, 2000);
+    });
+    header.addEventListener('touchend', () => clearTimeout(pressTimer));
+    header.addEventListener('touchmove', () => clearTimeout(pressTimer));
+}
+
+async function sendAIMessage() {
+    const input = $('#ai-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Check API key
+    if (!localStorage.getItem('geminiApiKey')) {
+        const key = prompt('首次使用請輸入 Gemini API Key：\n（到 https://aistudio.google.com/apikey 免費申請）');
+        if (key && key.trim()) {
+            localStorage.setItem('geminiApiKey', key.trim());
+        } else {
+            return;
+        }
+    }
+
+    // Show user message
+    appendAIMessage(message, 'user');
+    input.value = '';
+
+    // Show loading
+    const loadingEl = appendAIMessage('思考中...', 'bot loading');
+
+    try {
+        const response = await callGemini(message);
+        loadingEl.remove();
+        appendAIMessage(response, 'bot');
+    } catch (err) {
+        loadingEl.remove();
+        appendAIMessage(`❌ 發生錯誤：${err.message}`, 'bot');
+        console.error('Gemini API error:', err);
+    }
+}
+
+function appendAIMessage(text, type) {
+    const container = $('#ai-messages');
+    const div = document.createElement('div');
+    div.className = `ai-message ${type}`;
+    div.innerHTML = formatAIResponse(text);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+}
+
+function formatAIResponse(text) {
+    // Basic markdown-like formatting
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+}
+
+function buildSystemContext() {
+    const now = new Date();
+    const today = formatDate(now);
+    const currentTime = now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
+    let context = `你是一個旅遊行程助手。現在的時間是 ${today} ${currentTime}。`;
+
+    if (currentPosition) {
+        context += `\n使用者目前位置：緯度 ${currentPosition.lat.toFixed(5)}, 經度 ${currentPosition.lng.toFixed(5)}`;
+    }
+
+    // Add today's schedule
+    const todaySchedule = scheduleData.filter(item => normalizeDate(item.date) === today);
+    if (todaySchedule.length > 0) {
+        context += '\n\n【今天的行程】\n';
+        todaySchedule.forEach(item => {
+            context += `- ${item.startTime}~${item.endTime} ${item.place}（${item.address}）${item.notes ? '備註：' + item.notes : ''}\n`;
+        });
+    }
+
+    // Add all schedule data (compact)
+    if (scheduleData.length > 0) {
+        context += '\n\n【所有行程】\n';
+        scheduleData.forEach(item => {
+            context += `- ${item.date} ${item.startTime}~${item.endTime} ${item.place}（${item.address}）${item.notes ? ' / ' + item.notes : ''}\n`;
+        });
+    }
+
+    // Add food list
+    if (foodList.length > 0) {
+        context += '\n\n【美食清單】\n';
+        foodList.forEach(item => {
+            const info = [item.type, item.price, item.rating ? `評分${item.rating}` : '', item.area, item.queue, item.recommend].filter(Boolean).join('、');
+            context += `- ${item.name}（${item.address}）${info ? ' / ' + info : ''}${item.notes ? ' / ' + item.notes : ''}\n`;
+        });
+    }
+
+    // Add random places
+    if (randomPlaces.length > 0) {
+        context += '\n\n【隨機景點】\n';
+        randomPlaces.forEach(item => {
+            context += `- ${item.place}（${item.address}）類型：${item.type}${item.notes ? ' / ' + item.notes : ''}\n`;
+        });
+    }
+
+    context += '\n\n請用繁體中文回答。根據以上資料回答使用者的問題，提供具體的建議和規劃。如果行程有延遲，幫忙建議如何調整。回答盡量簡潔實用。';
+
+    return context;
+}
+
+async function callGemini(userMessage) {
+    // Build conversation with context
+    const systemContext = buildSystemContext();
+
+    // Add to chat history
+    aiChatHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+
+    const requestBody = {
+        system_instruction: {
+            parts: [{ text: systemContext }]
+        },
+        contents: aiChatHistory,
+        generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1024
+        }
+    };
+
+    const response = await fetch(getGeminiEndpoint(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我無法回答這個問題。';
+
+    // Add AI response to history
+    aiChatHistory.push({ role: 'model', parts: [{ text: aiResponse }] });
+
+    // Keep history manageable (last 20 messages)
+    if (aiChatHistory.length > 20) {
+        aiChatHistory = aiChatHistory.slice(-20);
+    }
+
+    return aiResponse;
 }

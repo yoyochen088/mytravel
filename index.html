@@ -26,6 +26,7 @@
             <button class="tab-btn" data-tab="timeline">時間軸</button>
             <button class="tab-btn" data-tab="food">美食</button>
             <button class="tab-btn" data-tab="random">探索</button>
+            <button class="tab-btn" data-tab="ai">AI助手</button>
         </nav>
 
         <!-- Now Tab -->
@@ -113,6 +114,28 @@
                 <button id="navigate-food-pick" class="nav-btn">🧭 導航到這裡</button>
             </div>
             <div id="food-list" class="place-list">
+            </div>
+        </section>
+
+        <!-- AI Tab -->
+        <section id="tab-ai" class="tab-content">
+            <div class="ai-chat">
+                <div id="ai-messages" class="ai-messages">
+                    <div class="ai-message bot">
+                        <p>嗨！我是你的旅遊 AI 助手 🤖</p>
+                        <p>我已經讀取了你所有的行程、美食、景點資料。你可以問我：</p>
+                        <ul>
+                            <li>行程延遲了怎麼調整？</li>
+                            <li>附近有什麼推薦的餐廳？</li>
+                            <li>幫我重新規劃今天下午</li>
+                            <li>這兩個景點先去哪個比較順？</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="ai-input-area">
+                    <input type="text" id="ai-input" placeholder="問我任何旅遊相關的問題..." autocomplete="off">
+                    <button id="ai-send" class="ai-send-btn">➤</button>
+                </div>
             </div>
         </section>
 

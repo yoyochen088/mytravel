@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initLocation();
     initDateSelector();
     initButtons();
+    initTools();
     initAI();
     registerServiceWorker();
     // User select & data loading
@@ -227,6 +228,7 @@ async function loadData() {
         updateTimeline();
         updateRandomList();
         updateFoodList();
+        loadPackingList();
     } catch (err) {
         console.error('載入資料失敗:', err);
     }
@@ -759,6 +761,235 @@ function registerServiceWorker() {
             .then(reg => console.log('SW registered:', reg.scope))
             .catch(err => console.log('SW registration failed:', err));
     }
+}
+
+
+// ==================== 工具 ====================
+
+function initTools() {
+    initCountdown();
+    initCurrency();
+    initEmergency();
+    initPackingList();
+}
+
+// --- Countdown ---
+function initCountdown() {
+    const startInput = $('#trip-start-date');
+    const endInput = $('#trip-end-date');
+
+    // Load saved dates
+    const savedStart = localStorage.getItem('tripStartDate') || '';
+    const savedEnd = localStorage.getItem('tripEndDate') || '';
+    startInput.value = savedStart;
+    endInput.value = savedEnd;
+
+    updateCountdown();
+    setInterval(updateCountdown, 60000); // Update every minute
+
+    $('#save-trip-dates').addEventListener('click', () => {
+        localStorage.setItem('tripStartDate', startInput.value);
+        localStorage.setItem('tripEndDate', endInput.value);
+        updateCountdown();
+    });
+}
+
+function updateCountdown() {
+    const startStr = localStorage.getItem('tripStartDate');
+    const endStr = localStorage.getItem('tripEndDate');
+    const numberEl = $('#countdown-number');
+    const labelEl = $('#countdown-label');
+
+    if (!startStr) {
+        numberEl.textContent = '-';
+        labelEl.textContent = '請設定出發日期';
+        return;
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const start = new Date(startStr);
+    const end = endStr ? new Date(endStr) : null;
+
+    const daysUntilStart = Math.ceil((start - today) / (1000 * 60 * 60 * 24));
+
+    if (daysUntilStart > 0) {
+        numberEl.textContent = daysUntilStart;
+        labelEl.textContent = '天後出發 ✈️';
+    } else if (end && today <= end) {
+        const tripDay = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+        const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+        numberEl.textContent = `Day ${tripDay}`;
+        labelEl.textContent = `旅程第 ${tripDay}/${totalDays} 天 🎉`;
+    } else {
+        numberEl.textContent = '🏠';
+        labelEl.textContent = '旅程已結束，回憶滿滿';
+    }
+}
+
+// --- Currency ---
+function initCurrency() {
+    const jpyInput = $('#jpy-input');
+    const twdInput = $('#twd-input');
+    const rateInput = $('#rate-input');
+
+    // Load saved rate
+    const savedRate = localStorage.getItem('exchangeRate') || '0.22';
+    rateInput.value = savedRate;
+
+    jpyInput.addEventListener('input', () => {
+        const jpy = parseFloat(jpyInput.value) || 0;
+        const rate = parseFloat(rateInput.value) || 0;
+        twdInput.value = jpy > 0 ? (jpy * rate).toFixed(0) : '';
+    });
+
+    twdInput.addEventListener('input', () => {
+        const twd = parseFloat(twdInput.value) || 0;
+        const rate = parseFloat(rateInput.value) || 0;
+        jpyInput.value = (twd > 0 && rate > 0) ? (twd / rate).toFixed(0) : '';
+    });
+
+    rateInput.addEventListener('change', () => {
+        localStorage.setItem('exchangeRate', rateInput.value);
+        // Recalculate
+        if (jpyInput.value) {
+            const jpy = parseFloat(jpyInput.value) || 0;
+            twdInput.value = (jpy * parseFloat(rateInput.value)).toFixed(0);
+        }
+    });
+
+    $('#fetch-rate').addEventListener('click', fetchExchangeRate);
+}
+
+async function fetchExchangeRate() {
+    try {
+        // Use a free exchange rate API
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/JPY');
+        const data = await res.json();
+        const rate = data.rates.TWD;
+        if (rate) {
+            $('#rate-input').value = rate.toFixed(4);
+            localStorage.setItem('exchangeRate', rate.toFixed(4));
+            // Recalculate
+            const jpy = parseFloat($('#jpy-input').value) || 0;
+            if (jpy > 0) {
+                $('#twd-input').value = (jpy * rate).toFixed(0);
+            }
+        }
+    } catch (err) {
+        console.error('匯率抓取失敗:', err);
+    }
+}
+
+// --- Emergency Info ---
+function initEmergency() {
+    const savedAddress = localStorage.getItem('hotelAddress') || '';
+    const savedPhone = localStorage.getItem('hotelPhone') || '';
+
+    if (savedAddress) {
+        $('#hotel-address').textContent = savedAddress;
+    }
+    if (savedPhone) {
+        $('#hotel-phone').textContent = savedPhone;
+        $('#hotel-phone').href = `tel:${savedPhone}`;
+    }
+
+    $('#edit-hotel-address').value = savedAddress;
+    $('#edit-hotel-phone').value = savedPhone;
+
+    $('#save-emergency').addEventListener('click', () => {
+        const address = $('#edit-hotel-address').value.trim();
+        const phone = $('#edit-hotel-phone').value.trim();
+        localStorage.setItem('hotelAddress', address);
+        localStorage.setItem('hotelPhone', phone);
+        $('#hotel-address').textContent = address || '未設定';
+        $('#hotel-phone').textContent = phone || '未設定';
+        $('#hotel-phone').href = phone ? `tel:${phone}` : '';
+    });
+}
+
+// --- Packing List ---
+let packingItems = [];
+
+function initPackingList() {
+    loadPackingList();
+}
+
+async function loadPackingList() {
+    const sheetId = window.SHEET_ID;
+    if (!sheetId) {
+        $('#packing-list').innerHTML = '<p class="hint">未設定 Sheet</p>';
+        return;
+    }
+
+    try {
+        const url = getSheetCsvUrl(sheetId, '行李清單');
+        const res = await fetch(url);
+        if (!res.ok) {
+            $('#packing-list').innerHTML = '<p class="hint">未找到「行李清單」分頁</p>';
+            return;
+        }
+        const csv = await res.text();
+        packingItems = parsePackingCSV(csv);
+        renderPackingList();
+    } catch (e) {
+        $('#packing-list').innerHTML = '<p class="hint">無法載入行李清單</p>';
+    }
+}
+
+function parsePackingCSV(csv) {
+    const lines = csv.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return [];
+
+    return lines.slice(1).map((line, idx) => {
+        const cols = parseCSVLine(line);
+        return {
+            id: idx,
+            item: cols[0] || '',
+            category: cols[1] || '',
+        };
+    }).filter(item => item.item);
+}
+
+function renderPackingList() {
+    const container = $('#packing-list');
+    const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
+
+    if (packingItems.length === 0) {
+        container.innerHTML = '<p class="hint">行李清單是空的</p>';
+        updatePackingProgress(0, 0);
+        return;
+    }
+
+    container.innerHTML = packingItems.map(item => {
+        const isChecked = checked.includes(item.id);
+        return `
+            <div class="packing-item ${isChecked ? 'checked' : ''}" onclick="togglePacking(${item.id})">
+                <div class="check">${isChecked ? '✓' : ''}</div>
+                <span>${item.item}</span>
+                ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    updatePackingProgress(checked.filter(id => id < packingItems.length).length, packingItems.length);
+}
+
+function togglePacking(id) {
+    let checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
+    if (checked.includes(id)) {
+        checked = checked.filter(i => i !== id);
+    } else {
+        checked.push(id);
+    }
+    localStorage.setItem('packingChecked', JSON.stringify(checked));
+    renderPackingList();
+}
+
+function updatePackingProgress(done, total) {
+    $('#packing-progress-text').textContent = `${done}/${total}`;
+    const pct = total > 0 ? (done / total * 100) : 0;
+    $('#packing-progress-bar').style.width = `${pct}%`;
 }
 
 

@@ -159,15 +159,16 @@ body {
 
 .tab-btn {
     flex: 1;
-    padding: 12px 8px;
+    padding: 12px 4px;
     border: none;
     background: none;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-secondary);
     cursor: pointer;
     border-bottom: 3px solid transparent;
     transition: all 0.2s;
+    white-space: nowrap;
 }
 
 .tab-btn.active {
@@ -599,6 +600,250 @@ body {
 .status-error {
     background: #fce8e6;
     color: #d93025;
+}
+
+/* Tools Tab */
+.tool-section {
+    background: white;
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+}
+
+.tool-header {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.tool-btn {
+    padding: 8px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.tool-btn-sm {
+    padding: 4px 10px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: none;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+/* Countdown */
+.countdown-box {
+    text-align: center;
+    padding: 16px;
+    background: var(--primary-light);
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.countdown-number {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.countdown-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.countdown-settings {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.countdown-settings input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+/* Currency */
+.currency-converter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.currency-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.currency-row input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: right;
+}
+
+.currency-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    min-width: 60px;
+}
+
+.currency-arrow {
+    text-align: center;
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+}
+
+.currency-rate {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.currency-rate input {
+    width: 65px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+/* Emergency */
+.emergency-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.emergency-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.emergency-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.emergency-value {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.emergency-edit {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.emergency-edit input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+/* Packing List */
+.packing-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+
+.packing-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.packing-item:active {
+    background: var(--primary-light);
+}
+
+.packing-item.checked {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.packing-item .check {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.7rem;
+}
+
+.packing-item.checked .check {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+}
+
+.packing-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.packing-progress span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--success);
+    border-radius: 4px;
+    transition: width 0.3s;
 }
 
 /* AI Chat */

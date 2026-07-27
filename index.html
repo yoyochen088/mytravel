@@ -41,6 +41,7 @@
             <button class="tab-btn" data-tab="timeline">時間軸</button>
             <button class="tab-btn" data-tab="food">美食</button>
             <button class="tab-btn" data-tab="random">探索</button>
+            <button class="tab-btn" data-tab="tools">工具</button>
             <button class="tab-btn" data-tab="ai">AI助手</button>
         </nav>
 
@@ -129,6 +130,91 @@
                 <button id="navigate-food-pick" class="nav-btn">🧭 導航到這裡</button>
             </div>
             <div id="food-list" class="place-list">
+            </div>
+        </section>
+
+        <!-- Tools Tab -->
+        <section id="tab-tools" class="tab-content">
+            <!-- Countdown -->
+            <div class="tool-section">
+                <div class="tool-header">✈️ 旅程倒數</div>
+                <div id="countdown-display" class="countdown-box">
+                    <span class="countdown-number" id="countdown-number">-</span>
+                    <span class="countdown-label" id="countdown-label">設定出發日期</span>
+                </div>
+                <div class="countdown-settings">
+                    <input type="date" id="trip-start-date">
+                    <input type="date" id="trip-end-date">
+                    <button id="save-trip-dates" class="tool-btn">儲存</button>
+                </div>
+            </div>
+
+            <!-- Currency Converter -->
+            <div class="tool-section">
+                <div class="tool-header">💱 匯率快算</div>
+                <div class="currency-converter">
+                    <div class="currency-row">
+                        <input type="number" id="jpy-input" placeholder="0" inputmode="numeric">
+                        <span class="currency-label">¥ 日幣</span>
+                    </div>
+                    <div class="currency-arrow">↕</div>
+                    <div class="currency-row">
+                        <input type="number" id="twd-input" placeholder="0" inputmode="numeric">
+                        <span class="currency-label">$ 台幣</span>
+                    </div>
+                    <div class="currency-rate">
+                        <span>匯率：1 JPY = </span>
+                        <input type="number" id="rate-input" step="0.001" value="0.22">
+                        <span> TWD</span>
+                        <button id="fetch-rate" class="tool-btn-sm">自動抓</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Info -->
+            <div class="tool-section">
+                <div class="tool-header">🆘 緊急資訊</div>
+                <div id="emergency-info" class="emergency-list">
+                    <div class="emergency-item">
+                        <span class="emergency-label">台灣駐日辦事處</span>
+                        <a href="tel:+81-3-6206-0066" class="emergency-value">+81-3-6206-0066</a>
+                    </div>
+                    <div class="emergency-item">
+                        <span class="emergency-label">日本報警</span>
+                        <a href="tel:110" class="emergency-value">110</a>
+                    </div>
+                    <div class="emergency-item">
+                        <span class="emergency-label">日本救護車</span>
+                        <a href="tel:119" class="emergency-value">119</a>
+                    </div>
+                    <div class="emergency-item" id="hotel-info">
+                        <span class="emergency-label">住宿地址</span>
+                        <span class="emergency-value" id="hotel-address">未設定</span>
+                    </div>
+                    <div class="emergency-item" id="hotel-phone-info">
+                        <span class="emergency-label">住宿電話</span>
+                        <a href="" class="emergency-value" id="hotel-phone">未設定</a>
+                    </div>
+                </div>
+                <div class="emergency-edit">
+                    <input type="text" id="edit-hotel-address" placeholder="住宿地址">
+                    <input type="text" id="edit-hotel-phone" placeholder="住宿電話">
+                    <button id="save-emergency" class="tool-btn">儲存</button>
+                </div>
+            </div>
+
+            <!-- Packing List -->
+            <div class="tool-section">
+                <div class="tool-header">🧳 行李清單</div>
+                <div id="packing-list" class="packing-list">
+                    <p class="hint">載入中...</p>
+                </div>
+                <div class="packing-progress">
+                    <span id="packing-progress-text">0/0</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="packing-progress-bar"></div>
+                    </div>
+                </div>
             </div>
         </section>
 

@@ -740,7 +740,6 @@ function initButtons() {
 
 async function refreshAll() {
     if (!currentUser) return;
-    showLoading(true);
 
     try {
         // Re-fetch user config from Apps Script
@@ -757,9 +756,41 @@ async function refreshAll() {
         console.log('重新取得設定失敗:', e);
     }
 
-    // Reload sheet data
-    await loadData();
-    showLoading(false);
+    // Reload sheet data (without showing loading overlay)
+    const sheetId = window.SHEET_ID;
+    if (!sheetId) return;
+
+    try {
+        const scheduleUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_SCHEDULE);
+        const scheduleRes = await fetch(scheduleUrl);
+        if (scheduleRes.ok) {
+            scheduleData = parseScheduleCSV(await scheduleRes.text());
+        }
+
+        try {
+            const randomUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_RANDOM);
+            const randomRes = await fetch(randomUrl);
+            if (randomRes.ok) {
+                randomPlaces = parseRandomCSV(await randomRes.text());
+            }
+        } catch (e) {}
+
+        try {
+            const foodUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_FOOD);
+            const foodRes = await fetch(foodUrl);
+            if (foodRes.ok) {
+                foodList = parseFoodCSV(await foodRes.text());
+            }
+        } catch (e) {}
+
+        updateNowTab();
+        updateTimeline();
+        updateRandomList();
+        updateFoodList();
+        loadPackingList();
+    } catch (err) {
+        console.error('重新載入資料失敗:', err);
+    }
 }
 
 // --- Utilities ---

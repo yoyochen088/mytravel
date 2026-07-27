@@ -765,10 +765,12 @@ function registerServiceWorker() {
 // ==================== AI 助手 (Gemini 3.1 Flash Lite) ====================
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
+const GEMINI_MODEL_FALLBACK = 'gemini-3.5-flash-lite';
 
-function getGeminiEndpoint() {
+function getGeminiEndpoint(model) {
     const key = localStorage.getItem('geminiApiKey') || '';
-    return `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`;
+    const m = model || GEMINI_MODEL;
+    return `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`;
 }
 
 let aiChatHistory = [];
@@ -929,11 +931,21 @@ async function callGemini(userMessage) {
         }
     };
 
-    const response = await fetch(getGeminiEndpoint(), {
+    // Try primary model first, fallback on failure
+    let response = await fetch(getGeminiEndpoint(GEMINI_MODEL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
     });
+
+    if (!response.ok) {
+        console.log(`${GEMINI_MODEL} 失敗 (${response.status})，切換備援 ${GEMINI_MODEL_FALLBACK}`);
+        response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+    }
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1032,11 +1044,20 @@ async function callGeminiWithImage(base64, mimeType) {
         }
     };
 
-    const response = await fetch(getGeminiEndpoint(), {
+    let response = await fetch(getGeminiEndpoint(GEMINI_MODEL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
     });
+
+    if (!response.ok) {
+        console.log(`圖片翻譯：${GEMINI_MODEL} 失敗，切換備援 ${GEMINI_MODEL_FALLBACK}`);
+        response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+    }
 
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

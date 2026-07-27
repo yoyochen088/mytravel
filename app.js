@@ -834,8 +834,18 @@ function initCurrency() {
     const rateInput = $('#rate-input');
 
     // Load saved rate
-    const savedRate = localStorage.getItem('exchangeRate') || '0.22';
-    rateInput.value = savedRate;
+    const savedRate = localStorage.getItem('exchangeRate') || '';
+    const lastFetch = localStorage.getItem('exchangeRateTime') || '0';
+    const hoursSinceLastFetch = (Date.now() - parseInt(lastFetch)) / (1000 * 60 * 60);
+
+    if (savedRate) {
+        rateInput.value = savedRate;
+    }
+
+    // Auto fetch if no rate or older than 12 hours
+    if (!savedRate || hoursSinceLastFetch > 12) {
+        fetchExchangeRate();
+    }
 
     jpyInput.addEventListener('input', () => {
         const jpy = parseFloat(jpyInput.value) || 0;
@@ -863,13 +873,13 @@ function initCurrency() {
 
 async function fetchExchangeRate() {
     try {
-        // Use a free exchange rate API
         const res = await fetch('https://api.exchangerate-api.com/v4/latest/JPY');
         const data = await res.json();
         const rate = data.rates.TWD;
         if (rate) {
             $('#rate-input').value = rate.toFixed(4);
             localStorage.setItem('exchangeRate', rate.toFixed(4));
+            localStorage.setItem('exchangeRateTime', Date.now().toString());
             // Recalculate
             const jpy = parseFloat($('#jpy-input').value) || 0;
             if (jpy > 0) {

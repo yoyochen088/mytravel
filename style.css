@@ -298,6 +298,35 @@ body {
     margin-bottom: 12px;
 }
 
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.filter-btn {
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    background: white;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.filter-btn:active {
+    transform: scale(0.95);
+}
+
 .action-btn {
     padding: 12px 24px;
     background: var(--primary);
@@ -334,6 +363,12 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.place-card:active {
+    transform: scale(0.97);
 }
 
 .place-card .place-info h3 {

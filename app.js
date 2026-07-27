@@ -3,6 +3,7 @@
 // --- State ---
 let scheduleData = [];
 let randomPlaces = [];
+let foodList = [];
 let currentPosition = null;
 let selectedDate = new Date();
 
@@ -72,9 +73,11 @@ function loadSettings() {
     const sheetId = localStorage.getItem('sheetId') || '';
     const sheetNameSchedule = localStorage.getItem('sheetNameSchedule') || '行程表';
     const sheetNameRandom = localStorage.getItem('sheetNameRandom') || '隨機景點';
+    const sheetNameFood = localStorage.getItem('sheetNameFood') || '美食';
     $('#sheet-id').value = sheetId;
     $('#sheet-name-schedule').value = sheetNameSchedule;
     $('#sheet-name-random').value = sheetNameRandom;
+    $('#sheet-name-food').value = sheetNameFood;
 }
 
 function saveSettings() {
@@ -89,6 +92,7 @@ function saveSettings() {
     localStorage.setItem('sheetId', sheetId);
     localStorage.setItem('sheetNameSchedule', $('#sheet-name-schedule').value.trim() || '行程表');
     localStorage.setItem('sheetNameRandom', $('#sheet-name-random').value.trim() || '隨機景點');
+    localStorage.setItem('sheetNameFood', $('#sheet-name-food').value.trim() || '美食');
     showStatus('✅ 設定已儲存！', 'success');
     loadData();
 }
@@ -121,6 +125,7 @@ async function loadData() {
     const sheetId = localStorage.getItem('sheetId');
     const sheetNameSchedule = localStorage.getItem('sheetNameSchedule') || '行程表';
     const sheetNameRandom = localStorage.getItem('sheetNameRandom') || '隨機景點';
+    const sheetNameFood = localStorage.getItem('sheetNameFood') || '美食';
 
     if (!sheetId) {
         showEmptyState();
@@ -149,9 +154,22 @@ async function loadData() {
             console.log('隨機景點分頁讀取失敗（可能不存在）:', e);
         }
 
+        // Load food list
+        try {
+            const foodUrl = getSheetCsvUrl(sheetId, sheetNameFood);
+            const foodRes = await fetch(foodUrl);
+            if (foodRes.ok) {
+                const foodCsv = await foodRes.text();
+                foodList = parseFoodCSV(foodCsv);
+            }
+        } catch (e) {
+            console.log('美食分頁讀取失敗（可能不存在）:', e);
+        }
+
         updateNowTab();
         updateTimeline();
         updateRandomList();
+        updateFoodList();
     } catch (err) {
         console.error('載入資料失敗:', err);
         showStatus('❌ 載入失敗，請確認試算表已設為公開檢視', 'error');
@@ -217,6 +235,22 @@ function parseRandomCSV(csv) {
             notes: cols[3] || ''
         };
     }).filter(item => item.place);
+}
+
+function parseFoodCSV(csv) {
+    const lines = csv.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return [];
+
+    return lines.slice(1).map(line => {
+        const cols = parseCSVLine(line);
+        return {
+            name: cols[0] || '',
+            address: cols[1] || '',
+            type: cols[2] || '',
+            recommend: cols[3] || '',
+            notes: cols[4] || ''
+        };
+    }).filter(item => item.name);
 }
 
 // --- Now Tab ---
@@ -339,10 +373,14 @@ function updateSelectedDateDisplay() {
 }
 
 // --- Random Places ---
+let selectedCategory = 'all';
+
 function updateRandomList() {
     const container = $('#random-list');
+    const filtersContainer = $('#category-filters');
 
     if (randomPlaces.length === 0) {
+        filtersContainer.innerHTML = '';
         container.innerHTML = `
             <div class="empty-state">
                 <div class="emoji">🎲</div>
@@ -352,29 +390,234 @@ function updateRandomList() {
         return;
     }
 
-    container.innerHTML = randomPlaces.map(item => `
-        <div class="place-card">
+    // Build category filters
+    const categories = [...new Set(randomPlaces.map(p => p.type).filter(Boolean))];
+    filtersContainer.innerHTML = `
+        <button class="filter-btn ${selectedCategory === 'all' ? 'active' : ''}" data-category="all">全部</button>
+        ${categories.map(cat => `
+            <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}">${getCategoryEmoji(cat)} ${cat}</button>
+        `).join('')}
+    `;
+
+    // Bind filter clicks
+    filtersContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedCategory = btn.dataset.category;
+            filtersContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFilteredList();
+            // Hide previous pick
+            $('#random-pick').style.display = 'none';
+        });
+    });
+
+    renderFilteredList();
+}
+
+function getFilteredPlaces() {
+    if (selectedCategory === 'all') return randomPlaces;
+    return randomPlaces.filter(p => p.type === selectedCategory);
+}
+
+function renderFilteredList() {
+    const container = $('#random-list');
+    const filtered = getFilteredPlaces();
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="emoji">📭</div>
+                <p>這個分類沒有景點</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filtered.map(item => `
+        <div class="place-card" onclick="navigateTo('${(item.address || item.place).replace(/'/g, "\\'")}')">
             <div class="place-info">
                 <h3>${item.place}</h3>
                 <p>${item.notes || ''}</p>
             </div>
-            ${item.type ? `<span class="place-type">${item.type}</span>` : ''}
+            ${item.type ? `<span class="place-type">${getCategoryEmoji(item.type)} ${item.type}</span>` : ''}
         </div>
     `).join('');
 }
 
-function shuffleRandom() {
-    if (randomPlaces.length === 0) return;
+function getCategoryEmoji(type) {
+    const emojiMap = {
+        '吃': '🍽️',
+        '美食': '🍽️',
+        '餐廳': '🍽️',
+        '小吃': '🍜',
+        '咖啡': '☕',
+        '飲料': '🧋',
+        '購物': '🛍️',
+        '逛街': '🛍️',
+        '景點': '📸',
+        '觀光': '📸',
+        '自然': '🌿',
+        '公園': '🌳',
+        '玩具店': '🧸',
+        '玩具': '🧸',
+        '文創': '🎨',
+        '書店': '📚',
+        '夜市': '🏮',
+        '廟宇': '🏯',
+        '博物館': '🏛️',
+        '娛樂': '🎮',
+        '酒吧': '🍺',
+        '甜點': '🍰',
+    };
+    return emojiMap[type] || '📍';
+}
 
-    const pick = randomPlaces[Math.floor(Math.random() * randomPlaces.length)];
+function shuffleRandom() {
+    const filtered = getFilteredPlaces();
+    if (filtered.length === 0) {
+        $('#random-pick').style.display = 'none';
+        return;
+    }
+
+    const pick = filtered[Math.floor(Math.random() * filtered.length)];
     $('#random-pick').style.display = 'block';
     $('#random-place').textContent = pick.place;
+    $('#random-type').textContent = pick.type ? `${getCategoryEmoji(pick.type)} ${pick.type}` : '';
     $('#random-notes').textContent = pick.notes ? `📝 ${pick.notes}` : '';
     $('#navigate-random').onclick = () => navigateTo(pick.address || pick.place);
 
-    // Add a fun animation
+    // Animation
     $('#random-pick').style.animation = 'none';
     setTimeout(() => { $('#random-pick').style.animation = 'fadeIn 0.3s ease'; }, 10);
+}
+
+// --- Food List ---
+let selectedFoodCategory = 'all';
+
+function updateFoodList() {
+    const container = $('#food-list');
+    const filtersContainer = $('#food-category-filters');
+
+    if (foodList.length === 0) {
+        filtersContainer.innerHTML = '';
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="emoji">🍽️</div>
+                <p>尚未設定美食清單</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Build category filters
+    const categories = [...new Set(foodList.map(f => f.type).filter(Boolean))];
+    filtersContainer.innerHTML = `
+        <button class="filter-btn ${selectedFoodCategory === 'all' ? 'active' : ''}" data-category="all">全部</button>
+        ${categories.map(cat => `
+            <button class="filter-btn ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}">${getFoodEmoji(cat)} ${cat}</button>
+        `).join('')}
+    `;
+
+    // Bind filter clicks
+    filtersContainer.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedFoodCategory = btn.dataset.category;
+            filtersContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFilteredFoodList();
+            $('#food-pick').style.display = 'none';
+        });
+    });
+
+    renderFilteredFoodList();
+}
+
+function getFilteredFood() {
+    if (selectedFoodCategory === 'all') return foodList;
+    return foodList.filter(f => f.type === selectedFoodCategory);
+}
+
+function renderFilteredFoodList() {
+    const container = $('#food-list');
+    const filtered = getFilteredFood();
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="emoji">📭</div>
+                <p>這個分類沒有餐廳</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filtered.map(item => `
+        <div class="place-card" onclick="navigateTo('${(item.address || item.name).replace(/'/g, "\\'")}')">
+            <div class="place-info">
+                <h3>${item.name}</h3>
+                <p>${item.recommend ? `⭐ ${item.recommend}` : ''}${item.notes ? ` · ${item.notes}` : ''}</p>
+            </div>
+            ${item.type ? `<span class="place-type">${getFoodEmoji(item.type)} ${item.type}</span>` : ''}
+        </div>
+    `).join('');
+}
+
+function getFoodEmoji(type) {
+    const emojiMap = {
+        '拉麵': '🍜',
+        '日式': '🍱',
+        '壽司': '🍣',
+        '燒肉': '🥩',
+        '火鍋': '🫕',
+        '牛排': '🥩',
+        '義式': '🍝',
+        '披薩': '🍕',
+        '漢堡': '🍔',
+        '炸雞': '🍗',
+        '中式': '🥢',
+        '台式': '🍚',
+        '小吃': '🧆',
+        '滷味': '🍲',
+        '早餐': '🥞',
+        '早午餐': '🥞',
+        '咖啡': '☕',
+        '飲料': '🧋',
+        '甜點': '🍰',
+        '冰品': '🍦',
+        '麵包': '🥐',
+        '韓式': '🥘',
+        '泰式': '🍛',
+        '印度': '🍛',
+        '越南': '🍜',
+        '素食': '🥗',
+        '海鮮': '🦐',
+        '居酒屋': '🍶',
+        '酒吧': '🍺',
+        '夜市': '🏮',
+    };
+    return emojiMap[type] || '🍽️';
+}
+
+function shuffleFood() {
+    const filtered = getFilteredFood();
+    if (filtered.length === 0) {
+        $('#food-pick').style.display = 'none';
+        return;
+    }
+
+    const pick = filtered[Math.floor(Math.random() * filtered.length)];
+    $('#food-pick').style.display = 'block';
+    $('#food-pick-name').textContent = pick.name;
+    $('#food-pick-type').textContent = pick.type ? `${getFoodEmoji(pick.type)} ${pick.type}` : '';
+    $('#food-pick-notes').textContent = [
+        pick.recommend ? `⭐ 推薦：${pick.recommend}` : '',
+        pick.notes ? `📝 ${pick.notes}` : ''
+    ].filter(Boolean).join(' · ');
+    $('#navigate-food-pick').onclick = () => navigateTo(pick.address || pick.name);
+
+    // Animation
+    $('#food-pick').style.animation = 'none';
+    setTimeout(() => { $('#food-pick').style.animation = 'fadeIn 0.3s ease'; }, 10);
 }
 
 // --- Navigation ---
@@ -399,6 +642,7 @@ function initButtons() {
     $('#save-settings').addEventListener('click', () => saveSettings());
     $('#test-connection').addEventListener('click', () => testConnection());
     $('#shuffle-btn').addEventListener('click', () => shuffleRandom());
+    $('#food-shuffle-btn').addEventListener('click', () => shuffleFood());
 }
 
 async function testConnection() {

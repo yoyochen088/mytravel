@@ -24,7 +24,8 @@
         <nav class="tab-nav">
             <button class="tab-btn active" data-tab="now">現在</button>
             <button class="tab-btn" data-tab="timeline">時間軸</button>
-            <button class="tab-btn" data-tab="random">隨機探索</button>
+            <button class="tab-btn" data-tab="food">美食</button>
+            <button class="tab-btn" data-tab="random">探索</button>
             <button class="tab-btn" data-tab="settings">設定</button>
         </nav>
 
@@ -75,18 +76,44 @@
         <!-- Random Tab -->
         <section id="tab-random" class="tab-content">
             <div class="random-header">
-                <p>以下是你的彈性景點，不綁定時間，隨時可以去！</p>
+                <p>想去哪一類的地方？選好再隨機！</p>
+                <div class="category-filters" id="category-filters">
+                    <button class="filter-btn active" data-category="all">全部</button>
+                </div>
                 <button id="shuffle-btn" class="action-btn">🎲 隨機推薦一個</button>
             </div>
             <div id="random-pick" class="card highlight-card" style="display:none;">
                 <div class="card-label">🎯 推薦你去</div>
                 <div class="card-content">
                     <h2 id="random-place"></h2>
+                    <p id="random-type"></p>
                     <p id="random-notes"></p>
                 </div>
                 <button id="navigate-random" class="nav-btn">🧭 導航到這裡</button>
             </div>
             <div id="random-list" class="place-list">
+            </div>
+        </section>
+
+        <!-- Food Tab -->
+        <section id="tab-food" class="tab-content">
+            <div class="random-header">
+                <p>想吃什麼？選分類再隨機！</p>
+                <div class="category-filters" id="food-category-filters">
+                    <button class="filter-btn active" data-category="all">全部</button>
+                </div>
+                <button id="food-shuffle-btn" class="action-btn">🎲 隨機挑一家</button>
+            </div>
+            <div id="food-pick" class="card highlight-card" style="display:none;">
+                <div class="card-label">🎯 今天就吃這個</div>
+                <div class="card-content">
+                    <h2 id="food-pick-name"></h2>
+                    <p id="food-pick-type"></p>
+                    <p id="food-pick-notes"></p>
+                </div>
+                <button id="navigate-food-pick" class="nav-btn">🧭 導航到這裡</button>
+            </div>
+            <div id="food-list" class="place-list">
             </div>
         </section>
 
@@ -105,6 +132,10 @@
                 <div class="setting-item">
                     <label for="sheet-name-random">隨機景點分頁名稱</label>
                     <input type="text" id="sheet-name-random" placeholder="隨機景點" value="隨機景點">
+                </div>
+                <div class="setting-item">
+                    <label for="sheet-name-food">美食清單分頁名稱</label>
+                    <input type="text" id="sheet-name-food" placeholder="美食" value="美食">
                 </div>
                 <button id="save-settings" class="action-btn">💾 儲存設定</button>
                 <button id="test-connection" class="action-btn secondary">🔗 測試連線</button>
@@ -127,6 +158,11 @@
                         <table class="guide-table">
                             <tr><th>地點</th><th>地址</th><th>類型</th><th>備註</th></tr>
                             <tr><td>象山步道</td><td>台北市信義區信義路五段150巷</td><td>自然</td><td>日落很美</td></tr>
+                        </table>
+                        <h4>🍽️ 美食分頁欄位：</h4>
+                        <table class="guide-table">
+                            <tr><th>店名</th><th>地址</th><th>類型</th><th>推薦餐點</th><th>備註</th></tr>
+                            <tr><td>一蘭拉麵</td><td>台北市信義區...</td><td>拉麵</td><td>天然豚骨</td><td>要排隊</td></tr>
                         </table>
                     </div>
                 </div>

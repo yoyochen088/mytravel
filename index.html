@@ -16,7 +16,7 @@
     <div id="app">
         <!-- Header -->
         <header class="app-header">
-            <h1>🗺️ Alex+Yoyo旅遊助手</h1>
+            <h1>🗺️ AAY旅遊助手</h1>
             <button id="refresh-btn" class="icon-btn" title="重新整理">🔄</button>
         </header>
 
@@ -128,12 +128,14 @@
                             <li>行程延遲了怎麼調整？</li>
                             <li>附近有什麼推薦的餐廳？</li>
                             <li>幫我重新規劃今天下午</li>
-                            <li>這兩個景點先去哪個比較順？</li>
+                            <li>📷 拍照翻譯日文菜單/路標</li>
                         </ul>
                     </div>
                 </div>
                 <div class="ai-input-area">
-                    <input type="text" id="ai-input" placeholder="問我任何旅遊相關的問題..." autocomplete="off">
+                    <label for="ai-image-input" class="ai-image-btn" title="上傳圖片翻譯">📷</label>
+                    <input type="file" id="ai-image-input" accept="image/*" capture="environment" style="display:none;">
+                    <input type="text" id="ai-input" placeholder="打字或拍照翻譯..." autocomplete="off">
                     <button id="ai-send" class="ai-send-btn">➤</button>
                 </div>
             </div>

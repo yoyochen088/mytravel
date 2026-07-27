@@ -685,12 +685,22 @@ let aiChatHistory = [];
 function initAI() {
     const input = $('#ai-input');
     const sendBtn = $('#ai-send');
+    const imageInput = $('#ai-image-input');
 
     sendBtn.addEventListener('click', () => sendAIMessage());
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.isComposing) {
             e.preventDefault();
             sendAIMessage();
+        }
+    });
+
+    // Image upload for translation
+    imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            handleImageUpload(file);
+            imageInput.value = ''; // Reset for next use
         }
     });
 
@@ -851,4 +861,97 @@ async function callGemini(userMessage) {
     }
 
     return aiResponse;
+}
+
+// --- Image Translation ---
+async function handleImageUpload(file) {
+    // Check API key
+    if (!localStorage.getItem('geminiApiKey')) {
+        const key = prompt('首次使用請輸入 Gemini API Key：\n（到 https://aistudio.google.com/apikey 免費申請）');
+        if (key && key.trim()) {
+            localStorage.setItem('geminiApiKey', key.trim());
+        } else {
+            return;
+        }
+    }
+
+    // Convert image to base64
+    const base64 = await fileToBase64(file);
+    const mimeType = file.type || 'image/jpeg';
+
+    // Show image in chat
+    const imgHtml = `<img src="data:${mimeType};base64,${base64}" alt="uploaded image">`;
+    appendAIMessageRaw(`📷 翻譯這張圖片：${imgHtml}`, 'user');
+
+    // Show loading
+    const loadingEl = appendAIMessage('辨識翻譯中...', 'bot loading');
+
+    try {
+        const response = await callGeminiWithImage(base64, mimeType);
+        loadingEl.remove();
+        appendAIMessage(response, 'bot');
+    } catch (err) {
+        loadingEl.remove();
+        appendAIMessage(`❌ 發生錯誤：${err.message}`, 'bot');
+        console.error('Gemini image error:', err);
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function appendAIMessageRaw(html, type) {
+    const container = $('#ai-messages');
+    const div = document.createElement('div');
+    div.className = `ai-message ${type}`;
+    div.innerHTML = html;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return div;
+}
+
+async function callGeminiWithImage(base64, mimeType) {
+    const prompt = '請翻譯這張圖片中的所有日文/外文文字成繁體中文。如果是菜單，請列出每道菜的名稱和中文翻譯。如果是路標或指示牌，請說明內容。格式清楚易讀。';
+
+    const requestBody = {
+        contents: [{
+            role: 'user',
+            parts: [
+                { text: prompt },
+                {
+                    inlineData: {
+                        mimeType: mimeType,
+                        data: base64
+                    }
+                }
+            ]
+        }],
+        generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 2048
+        }
+    };
+
+    const response = await fetch(getGeminiEndpoint(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，無法辨識圖片內容。';
 }

@@ -582,15 +582,39 @@ body {
     font-style: italic;
 }
 
+.ai-message img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
 .ai-input-area {
     display: flex;
     gap: 8px;
     padding-top: 12px;
     flex-shrink: 0;
     border-top: 1px solid var(--border);
+    align-items: center;
 }
 
-.ai-input-area input {
+.ai-image-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.ai-image-btn:active {
+    background: var(--border);
+}
+
+.ai-input-area input[type="text"] {
     flex: 1;
     padding: 12px;
     border: 1px solid var(--border);
@@ -599,7 +623,7 @@ body {
     outline: none;
 }
 
-.ai-input-area input:focus {
+.ai-input-area input[type="text"]:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-light);
 }

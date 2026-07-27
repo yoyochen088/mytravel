@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initLocation();
     initDateSelector();
     initButtons();
-    initTools();
     initAI();
     registerServiceWorker();
     // User select & data loading
@@ -163,6 +162,8 @@ function showMainApp() {
     $('.app-header').style.display = 'flex';
     $('.tab-nav').style.display = 'flex';
     $('#current-user-name').textContent = currentUser;
+    // Init tools after user config is applied
+    initTools();
 }
 
 function switchUser() {

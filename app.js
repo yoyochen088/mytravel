@@ -16,12 +16,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initClock();
     initLocation();
-    loadSettings();
-    loadData();
     initDateSelector();
     initButtons();
     initAI();
     registerServiceWorker();
+    // User select & data loading
+    initUserSelect();
 });
 
 // --- Tabs ---
@@ -69,14 +69,101 @@ function initLocation() {
     }
 }
 
-// --- Settings (hardcoded) ---
-const SHEET_ID = '1vZYYdHuaeXf0yCcln23dEvFXOYLJE_pSpkSftkKhn48';
-const SHEET_NAME_SCHEDULE = localStorage.getItem('sheetNameSchedule') || '行程表';
-const SHEET_NAME_RANDOM = localStorage.getItem('sheetNameRandom') || '隨機景點';
-const SHEET_NAME_FOOD = localStorage.getItem('sheetNameFood') || '美食';
+// --- Settings (loaded from Apps Script) ---
+const CONFIG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgG_zUs5_7XSt2mgk8GbKCk3UIZ89WKiuR4mOEcCKctiLOV88YD7-8Qo6-4dORGGV9/exec'; // ← 部署後貼上
+
+let currentUser = null;
+
+async function initUserSelect() {
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+        // Already has a saved user, try to load directly
+        try {
+            const config = JSON.parse(localStorage.getItem('userConfig_' + saved));
+            if (config) {
+                currentUser = saved;
+                applyUserConfig(config);
+                showMainApp();
+                return;
+            }
+        } catch (e) {}
+    }
+    // Show user select screen
+    await loadUserList();
+}
+
+async function loadUserList() {
+    const container = $('#user-list');
+    try {
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=listUsers');
+        const data = await res.json();
+
+        if (!data.users || data.users.length === 0) {
+            container.innerHTML = '<p class="hint">尚未設定任何用戶</p>';
+            return;
+        }
+
+        container.innerHTML = data.users.map(name => `
+            <button class="user-btn" onclick="selectUser('${name.replace(/'/g, "\\'")}')">${name}</button>
+        `).join('');
+    } catch (err) {
+        container.innerHTML = '<p class="hint">❌ 無法載入用戶列表，請檢查 Apps Script 連結</p>';
+        console.error('Load users failed:', err);
+    }
+}
+
+async function selectUser(name) {
+    showLoading(true);
+    try {
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(name));
+        const config = await res.json();
+
+        if (config.error) {
+            alert('找不到該用戶設定：' + config.error);
+            showLoading(false);
+            return;
+        }
+
+        // Save to localStorage
+        currentUser = name;
+        localStorage.setItem('currentUser', name);
+        localStorage.setItem('userConfig_' + name, JSON.stringify(config));
+        localStorage.setItem('geminiApiKey', config.apiKey || '');
+
+        applyUserConfig(config);
+        showMainApp();
+        loadData();
+    } catch (err) {
+        alert('讀取設定失敗：' + err.message);
+        console.error(err);
+    }
+    showLoading(false);
+}
+
+function applyUserConfig(config) {
+    // Store sheet settings for data loading
+    window.SHEET_ID = config.sheetId || '';
+    window.SHEET_NAME_SCHEDULE = config.sheetNameSchedule || '行程表';
+    window.SHEET_NAME_RANDOM = config.sheetNameRandom || '隨機景點';
+    window.SHEET_NAME_FOOD = config.sheetNameFood || '美食';
+}
+
+function showMainApp() {
+    $('#user-select-screen').style.display = 'none';
+    $('.app-header').style.display = 'flex';
+    $('.tab-nav').style.display = 'flex';
+    $('#current-user-name').textContent = currentUser;
+}
+
+function switchUser() {
+    localStorage.removeItem('currentUser');
+    $('#user-select-screen').style.display = 'flex';
+    $('.app-header').style.display = 'none';
+    loadUserList();
+}
 
 function loadSettings() {
-    // No-op, settings are hardcoded
+    // No-op, settings loaded via user select
 }
 
 function saveSettings() {
@@ -99,11 +186,14 @@ function getSheetCsvUrl(sheetId, sheetName) {
 
 // --- Data Loading ---
 async function loadData() {
+    const sheetId = window.SHEET_ID;
+    if (!sheetId) return;
+
     showLoading(true);
 
     try {
         // Load schedule
-        const scheduleUrl = getSheetCsvUrl(SHEET_ID, SHEET_NAME_SCHEDULE);
+        const scheduleUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_SCHEDULE);
         const scheduleRes = await fetch(scheduleUrl);
         if (!scheduleRes.ok) throw new Error(`HTTP ${scheduleRes.status}`);
         const scheduleCsv = await scheduleRes.text();
@@ -111,7 +201,7 @@ async function loadData() {
 
         // Load random places
         try {
-            const randomUrl = getSheetCsvUrl(SHEET_ID, SHEET_NAME_RANDOM);
+            const randomUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_RANDOM);
             const randomRes = await fetch(randomUrl);
             if (randomRes.ok) {
                 const randomCsv = await randomRes.text();
@@ -123,7 +213,7 @@ async function loadData() {
 
         // Load food list
         try {
-            const foodUrl = getSheetCsvUrl(SHEET_ID, SHEET_NAME_FOOD);
+            const foodUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_FOOD);
             const foodRes = await fetch(foodUrl);
             if (foodRes.ok) {
                 const foodCsv = await foodRes.text();
@@ -632,6 +722,7 @@ function initButtons() {
     $('#refresh-btn').addEventListener('click', () => loadData());
     $('#shuffle-btn').addEventListener('click', () => shuffleRandom());
     $('#food-shuffle-btn').addEventListener('click', () => shuffleFood());
+    $('#switch-user-btn').addEventListener('click', () => switchUser());
 }
 
 // --- Utilities ---

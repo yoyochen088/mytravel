@@ -14,14 +14,29 @@
 </head>
 <body>
     <div id="app">
+        <!-- User Select Screen -->
+        <div id="user-select-screen" class="user-select-screen">
+            <div class="user-select-box">
+                <h2>🗺️ 旅遊助手</h2>
+                <p>選擇你的身份</p>
+                <div id="user-list" class="user-list">
+                    <p class="hint">載入中...</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Header -->
-        <header class="app-header">
-            <h1>🗺️ AAY旅遊助手</h1>
-            <button id="refresh-btn" class="icon-btn" title="重新整理">🔄</button>
+        <header class="app-header" style="display:none;">
+            <h1>🗺️ 旅遊助手</h1>
+            <div class="header-actions">
+                <span id="current-user-name" class="current-user-badge"></span>
+                <button id="switch-user-btn" class="icon-btn" title="切換用戶">👤</button>
+                <button id="refresh-btn" class="icon-btn" title="重新整理">🔄</button>
+            </div>
         </header>
 
         <!-- Tab Navigation -->
-        <nav class="tab-nav">
+        <nav class="tab-nav" style="display:none;">
             <button class="tab-btn active" data-tab="now">現在</button>
             <button class="tab-btn" data-tab="timeline">時間軸</button>
             <button class="tab-btn" data-tab="food">美食</button>

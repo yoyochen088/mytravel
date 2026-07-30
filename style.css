@@ -785,6 +785,7 @@ body {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    margin-top: 10px;
 }
 
 .emergency-edit input {
@@ -794,6 +795,11 @@ body {
     border: 1px solid var(--border);
     border-radius: 6px;
     font-size: 0.85rem;
+}
+
+.tool-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 /* Packing List */

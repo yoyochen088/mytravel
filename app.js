@@ -163,8 +163,14 @@ function showMainApp() {
     $('.app-header').style.display = 'flex';
     $('.tab-nav').style.display = 'flex';
     $('#current-user-name').textContent = currentUser;
-    // Init tools after user config is applied
-    initTools();
+    // Init tools only once
+    if (!window._toolsInitialized) {
+        initTools();
+        window._toolsInitialized = true;
+    } else {
+        // Just refresh the display values
+        refreshToolsDisplay();
+    }
 }
 
 function switchUser() {
@@ -750,7 +756,7 @@ async function refreshAll() {
             localStorage.setItem('geminiApiKey', config.apiKey || '');
             applyUserConfig(config);
             // Refresh tools display
-            initTools();
+            refreshToolsDisplay();
         }
     } catch (e) {
         console.log('重新取得設定失敗:', e);
@@ -876,6 +882,24 @@ function initTools() {
     initPackingList();
 }
 
+function refreshToolsDisplay() {
+    // Refresh countdown display
+    const startInput = $('#trip-start-date');
+    const endInput = $('#trip-end-date');
+    startInput.value = toInputDate(localStorage.getItem('tripStartDate') || '');
+    endInput.value = toInputDate(localStorage.getItem('tripEndDate') || '');
+    updateCountdown();
+
+    // Refresh emergency display
+    const address = localStorage.getItem('hotelAddress') || '';
+    const phone = localStorage.getItem('hotelPhone') || '';
+    $('#hotel-address').textContent = address || '未設定';
+    $('#hotel-phone').textContent = phone || '未設定';
+    $('#hotel-phone').href = phone ? `tel:${phone}` : '';
+    $('#edit-hotel-address').value = address;
+    $('#edit-hotel-phone').value = phone;
+}
+
 // --- Countdown ---
 function initCountdown() {
     const startInput = $('#trip-start-date');
@@ -893,7 +917,12 @@ function initCountdown() {
     updateCountdown();
     setInterval(updateCountdown, 60000);
 
+    let savingDates = false;
     $('#save-trip-dates').addEventListener('click', async () => {
+        if (savingDates) return;
+        savingDates = true;
+        $('#save-trip-dates').disabled = true;
+
         const startVal = startInput.value;
         const endVal = endInput.value;
         localStorage.setItem('tripStartDate', startVal);
@@ -907,6 +936,8 @@ function initCountdown() {
         });
 
         alert('✅ 旅程日期已儲存');
+        savingDates = false;
+        $('#save-trip-dates').disabled = false;
     });
 }
 
@@ -1039,7 +1070,21 @@ function initEmergency() {
     $('#edit-hotel-address').value = savedAddress;
     $('#edit-hotel-phone').value = savedPhone;
 
+    // Toggle edit form
+    $('#toggle-emergency-edit').addEventListener('click', () => {
+        const form = $('#emergency-edit-form');
+        const isVisible = form.style.display !== 'none';
+        form.style.display = isVisible ? 'none' : 'flex';
+        $('#toggle-emergency-edit').textContent = isVisible ? '修改住宿資訊' : '取消';
+    });
+
+    // Save with debounce
+    let saving = false;
     $('#save-emergency').addEventListener('click', async () => {
+        if (saving) return;
+        saving = true;
+        $('#save-emergency').disabled = true;
+
         const address = $('#edit-hotel-address').value.trim();
         const phone = $('#edit-hotel-phone').value.trim();
         localStorage.setItem('hotelAddress', address);
@@ -1054,7 +1099,13 @@ function initEmergency() {
             hotelPhone: phone
         });
 
+        // Hide form
+        $('#emergency-edit-form').style.display = 'none';
+        $('#toggle-emergency-edit').textContent = '修改住宿資訊';
+
         alert('✅ 住宿資訊已儲存');
+        saving = false;
+        $('#save-emergency').disabled = false;
     });
 }
 

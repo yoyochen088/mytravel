@@ -1640,14 +1640,24 @@ function getSyncQueue() {
 
 function showSyncStatus() {
     const el = $('#sync-status');
+    const clearBtn = $('#clear-sync-queue');
     if (!el) return;
     const queue = getSyncQueue();
     if (queue.length > 0) {
         el.style.display = 'block';
         el.textContent = `⚠️ ${queue.length} 筆待同步`;
+        if (clearBtn) clearBtn.style.display = 'inline-block';
     } else {
         el.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
     }
+}
+
+function clearSyncQueue() {
+    if (!confirm('確定清除所有待同步項目？（這些操作將不會被同步到 Google Sheets）')) return;
+    localStorage.setItem('syncQueue', '[]');
+    showSyncStatus();
+    alert('✅ 已清除');
 }
 
 async function processSyncQueue() {

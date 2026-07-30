@@ -162,6 +162,11 @@
             <!-- More Tab (選單列表) -->
             <section id="tab-more" class="tab-content">
                 <div class="more-menu">
+                    <div class="more-menu-item" data-page="schedule-manage">
+                        <span class="more-icon">📝</span>
+                        <span class="more-label">行程管理</span>
+                        <span class="more-arrow">›</span>
+                    </div>
                     <div class="more-menu-item" data-page="currency">
                         <span class="more-icon">💱</span>
                         <span class="more-label">匯率快算</span>
@@ -312,6 +317,56 @@
                 <input type="date" id="trip-start-date">
                 <input type="date" id="trip-end-date">
                 <button id="save-trip-dates" class="tool-btn">修改</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-schedule-manage">
+        <div class="tool-section">
+            <div class="tool-header">📝 行程管理</div>
+            <div id="sync-status" class="sync-status" style="display:none;"></div>
+            <div class="schedule-date-selector">
+                <button class="icon-btn" id="sched-prev-day">◀</button>
+                <span id="sched-selected-date"></span>
+                <button class="icon-btn" id="sched-next-day">▶</button>
+            </div>
+            <div id="schedule-edit-list" class="schedule-edit-list">
+            </div>
+            <button id="add-schedule-btn" class="action-btn" style="width:100%;margin-top:12px;">＋ 新增行程</button>
+        </div>
+
+        <!-- Edit Form (hidden by default) -->
+        <div id="schedule-form" class="schedule-form" style="display:none;">
+            <div class="tool-header" id="schedule-form-title">新增行程</div>
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="sched-date">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>開始時間</label>
+                    <input type="time" id="sched-start">
+                </div>
+                <div class="form-group">
+                    <label>結束時間</label>
+                    <input type="time" id="sched-end">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>地點</label>
+                <input type="text" id="sched-place" placeholder="地點名稱">
+            </div>
+            <div class="form-group">
+                <label>地址</label>
+                <input type="text" id="sched-address" placeholder="完整地址（導航用）">
+            </div>
+            <div class="form-group">
+                <label>備註</label>
+                <input type="text" id="sched-notes" placeholder="備註（選填）">
+            </div>
+            <div class="form-actions">
+                <button id="sched-cancel" class="tool-btn" style="background:var(--text-secondary);">取消</button>
+                <button id="sched-save" class="tool-btn">儲存</button>
             </div>
         </div>
     </template>

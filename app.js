@@ -81,6 +81,9 @@ function openMoreSubpage(page) {
 
 function initSubpage(page) {
     switch (page) {
+        case 'schedule-manage':
+            initScheduleManage();
+            break;
         case 'currency':
             initCurrency();
             break;
@@ -95,7 +98,6 @@ function initSubpage(page) {
             initCountdown();
             break;
         case 'settings':
-            // Settings page has inline onclick handlers
             break;
     }
 }
@@ -806,6 +808,9 @@ function initButtons() {
 async function refreshAll() {
     if (!currentUser) return;
 
+    // Process any pending sync queue items
+    await processSyncQueue();
+
     try {
         // Re-fetch user config from Apps Script
         const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(currentUser));
@@ -1283,6 +1288,254 @@ async function saveUserInfoToServer(fields) {
     } catch (err) {
         console.error('儲存到伺服器失敗:', err);
     }
+}
+
+
+// ==================== 行程管理 ====================
+
+let schedManageDate = new Date();
+let editingIndex = null; // null = 新增, number = 編輯第幾列
+
+function initScheduleManage() {
+    updateSchedDateDisplay();
+    renderScheduleEditList();
+
+    // Date navigation
+    $('#sched-prev-day').addEventListener('click', () => {
+        schedManageDate.setDate(schedManageDate.getDate() - 1);
+        updateSchedDateDisplay();
+        renderScheduleEditList();
+    });
+    $('#sched-next-day').addEventListener('click', () => {
+        schedManageDate.setDate(schedManageDate.getDate() + 1);
+        updateSchedDateDisplay();
+        renderScheduleEditList();
+    });
+
+    // Add button
+    $('#add-schedule-btn').addEventListener('click', () => {
+        editingIndex = null;
+        showScheduleForm(null);
+    });
+
+    // Cancel
+    $('#sched-cancel').addEventListener('click', () => {
+        $('#schedule-form').style.display = 'none';
+    });
+
+    // Save
+    let saving = false;
+    $('#sched-save').addEventListener('click', async () => {
+        if (saving) return;
+        saving = true;
+        $('#sched-save').disabled = true;
+
+        const item = {
+            date: $('#sched-date').value,
+            startTime: $('#sched-start').value,
+            endTime: $('#sched-end').value,
+            place: $('#sched-place').value.trim(),
+            address: $('#sched-address').value.trim(),
+            notes: $('#sched-notes').value.trim()
+        };
+
+        if (!item.date || !item.startTime || !item.place) {
+            alert('請至少填寫日期、開始時間和地點');
+            saving = false;
+            $('#sched-save').disabled = false;
+            return;
+        }
+
+        if (editingIndex !== null) {
+            await saveScheduleItem('update', item, editingIndex);
+        } else {
+            await saveScheduleItem('add', item, null);
+        }
+
+        $('#schedule-form').style.display = 'none';
+        saving = false;
+        $('#sched-save').disabled = false;
+    });
+
+    // Show sync queue status
+    showSyncStatus();
+}
+
+function updateSchedDateDisplay() {
+    $('#sched-selected-date').textContent = schedManageDate.toLocaleDateString('zh-TW', {
+        month: 'long', day: 'numeric', weekday: 'short'
+    });
+    // Set default date for form
+    const dateStr = schedManageDate.toISOString().split('T')[0];
+    const dateInput = $('#sched-date');
+    if (dateInput) dateInput.value = dateStr;
+}
+
+function renderScheduleEditList() {
+    const container = $('#schedule-edit-list');
+    const dateStr = formatDate(schedManageDate);
+    const daySchedule = scheduleData.filter((item, idx) => {
+        item._idx = idx; // track original index
+        return normalizeDate(item.date) === dateStr;
+    });
+
+    if (daySchedule.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><p>這天沒有行程</p></div>';
+        return;
+    }
+
+    container.innerHTML = daySchedule.map(item => `
+        <div class="schedule-edit-item">
+            <div class="sched-info">
+                <div class="sched-time">${item.startTime} - ${item.endTime}</div>
+                <div class="sched-place">${item.place}</div>
+            </div>
+            <div class="sched-actions">
+                <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">✏️</button>
+                <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function showScheduleForm(item) {
+    $('#schedule-form').style.display = 'block';
+    $('#schedule-form-title').textContent = item ? '編輯行程' : '新增行程';
+
+    const dateStr = schedManageDate.toISOString().split('T')[0];
+    $('#sched-date').value = item ? toInputDate(item.date.replace(/\//g, '-')) : dateStr;
+    $('#sched-start').value = item ? item.startTime : '';
+    $('#sched-end').value = item ? item.endTime : '';
+    $('#sched-place').value = item ? item.place : '';
+    $('#sched-address').value = item ? item.address : '';
+    $('#sched-notes').value = item ? item.notes : '';
+}
+
+function editScheduleItem(idx) {
+    editingIndex = idx;
+    showScheduleForm(scheduleData[idx]);
+}
+
+async function deleteScheduleItemConfirm(idx) {
+    const item = scheduleData[idx];
+    if (!confirm(`確定刪除「${item.place}」？`)) return;
+
+    await saveScheduleItem('delete', null, idx);
+}
+
+async function saveScheduleItem(action, item, idx) {
+    const sheetId = window.SHEET_ID;
+    const sheetName = window.SHEET_NAME_SCHEDULE;
+
+    const payload = {
+        action: action === 'add' ? 'addScheduleItem' :
+                action === 'update' ? 'updateScheduleItem' : 'deleteScheduleItem',
+        sheetId: sheetId,
+        sheetName: sheetName,
+        rowIndex: idx,
+        item: item
+    };
+
+    try {
+        const res = await fetch(CONFIG_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        // Apps Script redirects with no-cors may not give readable response
+        // Try to parse, fallback to assuming success
+        let result = { success: true };
+        try {
+            result = await res.json();
+        } catch (e) {}
+
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        // Update local data
+        if (action === 'add') {
+            scheduleData.push(item);
+        } else if (action === 'update') {
+            scheduleData[idx] = item;
+        } else if (action === 'delete') {
+            scheduleData.splice(idx, 1);
+        }
+
+        renderScheduleEditList();
+        updateNowTab();
+        updateTimeline();
+        alert(action === 'delete' ? '✅ 已刪除' : '✅ 已儲存');
+
+    } catch (err) {
+        console.error('儲存失敗，加入同步佇列:', err);
+        // Offline / failed: queue for later
+        addToSyncQueue(payload);
+        
+        // Still update local data for immediate UI
+        if (action === 'add') {
+            scheduleData.push(item);
+        } else if (action === 'update') {
+            scheduleData[idx] = item;
+        } else if (action === 'delete') {
+            scheduleData.splice(idx, 1);
+        }
+
+        renderScheduleEditList();
+        updateNowTab();
+        updateTimeline();
+        alert('⚠️ 已暫存本地（網路恢復後將自動同步）');
+        showSyncStatus();
+    }
+}
+
+// --- Offline Sync Queue ---
+function addToSyncQueue(payload) {
+    const queue = JSON.parse(localStorage.getItem('syncQueue') || '[]');
+    queue.push({ payload, timestamp: Date.now() });
+    localStorage.setItem('syncQueue', JSON.stringify(queue));
+}
+
+function getSyncQueue() {
+    return JSON.parse(localStorage.getItem('syncQueue') || '[]');
+}
+
+function showSyncStatus() {
+    const el = $('#sync-status');
+    if (!el) return;
+    const queue = getSyncQueue();
+    if (queue.length > 0) {
+        el.style.display = 'block';
+        el.textContent = `⚠️ ${queue.length} 筆待同步`;
+    } else {
+        el.style.display = 'none';
+    }
+}
+
+async function processSyncQueue() {
+    const queue = getSyncQueue();
+    if (queue.length === 0) return;
+
+    const remaining = [];
+    for (const entry of queue) {
+        try {
+            const res = await fetch(CONFIG_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(entry.payload)
+            });
+            let result = {};
+            try { result = await res.json(); } catch (e) {}
+            if (result.error) {
+                remaining.push(entry);
+            }
+        } catch (e) {
+            remaining.push(entry);
+        }
+    }
+
+    localStorage.setItem('syncQueue', JSON.stringify(remaining));
 }
 
 

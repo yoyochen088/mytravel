@@ -857,11 +857,11 @@ function initPullToRefresh() {
         if (!pulling) return;
         pulling = false;
         if (indicator.classList.contains('visible')) {
-            indicator.querySelector('span').textContent = '🔄 更新中...';
-            indicator.classList.add('loading');
+            indicator.classList.remove('visible');
+            // Use center loading spinner
+            showLoading(true);
             await refreshAll();
-            indicator.classList.remove('visible', 'loading');
-            indicator.querySelector('span').textContent = '↓ 下拉更新';
+            showLoading(false);
         }
     });
 }
@@ -881,11 +881,14 @@ function initCountdown() {
     const startInput = $('#trip-start-date');
     const endInput = $('#trip-end-date');
 
-    // Load saved dates
-    const savedStart = localStorage.getItem('tripStartDate') || '';
-    const savedEnd = localStorage.getItem('tripEndDate') || '';
+    // Load saved dates (normalize to YYYY-MM-DD for date input)
+    const savedStart = toInputDate(localStorage.getItem('tripStartDate') || '');
+    const savedEnd = toInputDate(localStorage.getItem('tripEndDate') || '');
     startInput.value = savedStart;
     endInput.value = savedEnd;
+    // Store normalized back so countdown reads consistent format
+    if (savedStart) localStorage.setItem('tripStartDate', savedStart);
+    if (savedEnd) localStorage.setItem('tripEndDate', savedEnd);
 
     updateCountdown();
     setInterval(updateCountdown, 60000);
@@ -903,11 +906,24 @@ function initCountdown() {
             tripEndDate: endVal
         });
 
-        // Show confirmation
-        const btn = $('#save-trip-dates');
-        btn.textContent = '✅ 已儲存';
-        setTimeout(() => { btn.textContent = '儲存'; }, 2000);
+        alert('✅ 旅程日期已儲存');
     });
+}
+
+// Normalize any date string to YYYY-MM-DD for <input type="date">
+function toInputDate(str) {
+    if (!str) return '';
+    // Already correct format
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    // ISO string with time
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+    return '';
 }
 
 function updateCountdown() {
@@ -1037,6 +1053,8 @@ function initEmergency() {
             hotelAddress: address,
             hotelPhone: phone
         });
+
+        alert('✅ 住宿資訊已儲存');
     });
 }
 

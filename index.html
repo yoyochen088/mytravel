@@ -269,6 +269,23 @@
                     <div class="progress-fill" id="packing-progress-bar"></div>
                 </div>
             </div>
+            <button id="add-packing-btn" class="action-btn" style="width:100%;margin-top:12px;">＋ 新增物品</button>
+            <div id="packing-form" class="schedule-form" style="display:none;margin-top:12px;">
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label>物品名稱</label>
+                        <input type="text" id="packing-item-name" placeholder="物品名稱">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>分類</label>
+                        <input type="text" id="packing-item-category" placeholder="分類">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button id="packing-cancel" class="tool-btn" style="background:var(--text-secondary);">取消</button>
+                    <button id="packing-save" class="tool-btn">儲存</button>
+                </div>
+            </div>
         </div>
     </template>
 

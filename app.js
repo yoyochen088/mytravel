@@ -1181,15 +1181,69 @@ function initEmergency() {
 
 // --- Packing List ---
 let packingItems = [];
+let editingPackingIndex = null;
 
 function initPackingList() {
     loadPackingList();
+
+    // Add button
+    const addBtn = $('#add-packing-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            editingPackingIndex = null;
+            showPackingForm(null);
+        });
+    }
+
+    // Cancel
+    const cancelBtn = $('#packing-cancel');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            $('#packing-form').style.display = 'none';
+        });
+    }
+
+    // Save
+    const saveBtn = $('#packing-save');
+    if (saveBtn) {
+        let saving = false;
+        saveBtn.addEventListener('click', async () => {
+            if (saving) return;
+            saving = true;
+            saveBtn.disabled = true;
+
+            const item = {
+                item: $('#packing-item-name').value.trim(),
+                category: $('#packing-item-category').value.trim()
+            };
+
+            if (!item.item) {
+                alert('請填寫物品名稱');
+                saving = false;
+                saveBtn.disabled = false;
+                return;
+            }
+
+            await savePackingItem(editingPackingIndex !== null ? 'update' : 'add', item, editingPackingIndex);
+            $('#packing-form').style.display = 'none';
+            saving = false;
+            saveBtn.disabled = false;
+        });
+    }
+}
+
+function showPackingForm(item) {
+    $('#packing-form').style.display = 'block';
+    $('#packing-item-name').value = item ? item.item : '';
+    $('#packing-item-category').value = item ? item.category : '';
 }
 
 async function loadPackingList() {
     const sheetId = window.SHEET_ID;
+    const container = $('#packing-list');
+    if (!container) return;
     if (!sheetId) {
-        $('#packing-list').innerHTML = '<p class="hint">未設定 Sheet</p>';
+        container.innerHTML = '<p class="hint">未設定 Sheet</p>';
         return;
     }
 
@@ -1197,14 +1251,14 @@ async function loadPackingList() {
         const url = getSheetCsvUrl(sheetId, '行李清單');
         const res = await fetch(url);
         if (!res.ok) {
-            $('#packing-list').innerHTML = '<p class="hint">未找到「行李清單」分頁</p>';
+            container.innerHTML = '<p class="hint">未找到「行李清單」分頁</p>';
             return;
         }
         const csv = await res.text();
         packingItems = parsePackingCSV(csv);
         renderPackingList();
     } catch (e) {
-        $('#packing-list').innerHTML = '<p class="hint">無法載入行李清單</p>';
+        container.innerHTML = '<p class="hint">無法載入行李清單</p>';
     }
 }
 
@@ -1224,6 +1278,7 @@ function parsePackingCSV(csv) {
 
 function renderPackingList() {
     const container = $('#packing-list');
+    if (!container) return;
     const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
 
     if (packingItems.length === 0) {
@@ -1235,10 +1290,12 @@ function renderPackingList() {
     container.innerHTML = packingItems.map(item => {
         const isChecked = checked.includes(item.id);
         return `
-            <div class="packing-item ${isChecked ? 'checked' : ''}" onclick="togglePacking(${item.id})">
-                <div class="check">${isChecked ? '✓' : ''}</div>
-                <span>${item.item}</span>
+            <div class="packing-item ${isChecked ? 'checked' : ''}">
+                <div class="check" onclick="togglePacking(${item.id})">${isChecked ? '✓' : ''}</div>
+                <span onclick="togglePacking(${item.id})">${item.item}</span>
                 ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
+                <button class="sched-action-btn edit" onclick="editPackingItem(${item.id})" style="margin-left:8px;">✏️</button>
+                <button class="sched-action-btn delete" onclick="deletePackingItemConfirm(${item.id})">🗑️</button>
             </div>
         `;
     }).join('');
@@ -1257,10 +1314,81 @@ function togglePacking(id) {
     renderPackingList();
 }
 
+function editPackingItem(id) {
+    editingPackingIndex = id;
+    showPackingForm(packingItems[id]);
+}
+
+async function deletePackingItemConfirm(id) {
+    const item = packingItems[id];
+    if (!confirm(`確定刪除「${item.item}」？`)) return;
+    await savePackingItem('delete', null, id);
+}
+
+async function savePackingItem(action, item, idx) {
+    const sheetId = window.SHEET_ID;
+
+    const payload = {
+        action: action === 'add' ? 'addPackingItem' :
+                action === 'update' ? 'updatePackingItem' : 'deletePackingItem',
+        sheetId: sheetId,
+        rowIndex: idx,
+        item: item
+    };
+
+    try {
+        const res = await fetch(CONFIG_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        let result = { success: true };
+        try { result = await res.json(); } catch (e) {}
+
+        if (result.error) throw new Error(result.error);
+
+        // Update local data
+        if (action === 'add') {
+            packingItems.push({ id: packingItems.length, item: item.item, category: item.category });
+        } else if (action === 'update') {
+            packingItems[idx] = { ...packingItems[idx], ...item };
+        } else if (action === 'delete') {
+            packingItems.splice(idx, 1);
+            // Re-index
+            packingItems.forEach((p, i) => p.id = i);
+            // Clean checked
+            localStorage.setItem('packingChecked', JSON.stringify([]));
+        }
+
+        renderPackingList();
+        alert(action === 'delete' ? '✅ 已刪除' : '✅ 已儲存');
+
+    } catch (err) {
+        console.error('行李清單儲存失敗:', err);
+        addToSyncQueue(payload);
+
+        if (action === 'add') {
+            packingItems.push({ id: packingItems.length, item: item.item, category: item.category });
+        } else if (action === 'update') {
+            packingItems[idx] = { ...packingItems[idx], ...item };
+        } else if (action === 'delete') {
+            packingItems.splice(idx, 1);
+            packingItems.forEach((p, i) => p.id = i);
+        }
+
+        renderPackingList();
+        alert('⚠️ 已暫存本地（網路恢復後自動同步）');
+    }
+}
+
 function updatePackingProgress(done, total) {
-    $('#packing-progress-text').textContent = `${done}/${total}`;
+    const el = $('#packing-progress-text');
+    if (!el) return;
+    el.textContent = `${done}/${total}`;
     const pct = total > 0 ? (done / total * 100) : 0;
-    $('#packing-progress-bar').style.width = `${pct}%`;
+    const bar = $('#packing-progress-bar');
+    if (bar) bar.style.width = `${pct}%`;
 }
 
 // --- Save to Apps Script ---

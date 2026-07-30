@@ -27,14 +27,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Tabs ---
 function initTabs() {
-    $$('.tab-btn').forEach(btn => {
+    // Bottom tab bar
+    $$('.bottom-tab').forEach(btn => {
         btn.addEventListener('click', () => {
-            $$('.tab-btn').forEach(b => b.classList.remove('active'));
+            $$('.bottom-tab').forEach(b => b.classList.remove('active'));
             $$('.tab-content').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
             $(`#tab-${btn.dataset.tab}`).classList.add('active');
+            // Hide subpage when switching tabs
+            const subpage = $('#more-subpage');
+            if (subpage) subpage.style.display = 'none';
+            const moreMenu = document.querySelector('#tab-more .more-menu');
+            if (moreMenu) moreMenu.style.display = 'flex';
         });
     });
+
+    // Explore toggle (food / places)
+    $$('.explore-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            $$('.explore-toggle-btn').forEach(b => b.classList.remove('active'));
+            $$('.explore-section').forEach(s => s.classList.remove('active'));
+            btn.classList.add('active');
+            $(`#explore-${btn.dataset.explore}`).classList.add('active');
+        });
+    });
+
+    // More menu sub-pages
+    $$('.more-menu-item[data-page]').forEach(item => {
+        item.addEventListener('click', () => {
+            openMoreSubpage(item.dataset.page);
+        });
+    });
+
+    // Back button
+    $('#more-back').addEventListener('click', () => {
+        $('#more-subpage').style.display = 'none';
+        document.querySelector('#tab-more .more-menu').style.display = 'flex';
+    });
+}
+
+function openMoreSubpage(page) {
+    const tpl = $(`#tpl-${page}`);
+    if (!tpl) return;
+
+    const content = $('#more-subpage-content');
+    content.innerHTML = tpl.innerHTML;
+    $('#more-subpage').style.display = 'block';
+    document.querySelector('#tab-more .more-menu').style.display = 'none';
+
+    // Re-initialize the sub-page functionality
+    initSubpage(page);
+}
+
+function initSubpage(page) {
+    switch (page) {
+        case 'currency':
+            initCurrency();
+            break;
+        case 'packing':
+            initPackingList();
+            renderPackingList();
+            break;
+        case 'emergency':
+            initEmergency();
+            break;
+        case 'trip-dates':
+            initCountdown();
+            break;
+        case 'settings':
+            // Settings page has inline onclick handlers
+            break;
+    }
 }
 
 // --- Clock ---
@@ -161,22 +224,20 @@ function applyUserConfig(config) {
 function showMainApp() {
     $('#user-select-screen').style.display = 'none';
     $('.app-header').style.display = 'flex';
-    $('.tab-nav').style.display = 'flex';
+    $('.bottom-tab-bar').style.display = 'flex';
     $('#current-user-name').textContent = currentUser;
     // Init tools only once
     if (!window._toolsInitialized) {
-        initTools();
         window._toolsInitialized = true;
-    } else {
-        // Just refresh the display values
-        refreshToolsDisplay();
     }
+    updateCountdownDisplay();
 }
 
 function switchUser() {
     localStorage.removeItem('currentUser');
     $('#user-select-screen').style.display = 'flex';
     $('.app-header').style.display = 'none';
+    $('.bottom-tab-bar').style.display = 'none';
     loadUserList();
 }
 
@@ -738,10 +799,8 @@ function navigateTo(destination) {
 
 // --- Buttons ---
 function initButtons() {
-    $('#refresh-btn').addEventListener('click', () => refreshAll());
-    $('#shuffle-btn').addEventListener('click', () => shuffleRandom());
     $('#food-shuffle-btn').addEventListener('click', () => shuffleFood());
-    $('#switch-user-btn').addEventListener('click', () => switchUser());
+    $('#shuffle-btn').addEventListener('click', () => shuffleRandom());
 }
 
 async function refreshAll() {
@@ -876,28 +935,20 @@ function initPullToRefresh() {
 // ==================== 工具 ====================
 
 function initTools() {
-    initCountdown();
-    initCurrency();
-    initEmergency();
-    initPackingList();
+    // Now tools are initialized on demand when subpages open
+    // This is kept for backward compatibility
 }
 
 function refreshToolsDisplay() {
-    // Refresh countdown display
-    const startInput = $('#trip-start-date');
-    const endInput = $('#trip-end-date');
-    startInput.value = toInputDate(localStorage.getItem('tripStartDate') || '');
-    endInput.value = toInputDate(localStorage.getItem('tripEndDate') || '');
-    updateCountdown();
+    // Called after refresh to update countdown on main page if visible
+    updateCountdownDisplay();
+}
 
-    // Refresh emergency display
-    const address = localStorage.getItem('hotelAddress') || '';
-    const phone = localStorage.getItem('hotelPhone') || '';
-    $('#hotel-address').textContent = address || '未設定';
-    $('#hotel-phone').textContent = phone || '未設定';
-    $('#hotel-phone').href = phone ? `tel:${phone}` : '';
-    $('#edit-hotel-address').value = address;
-    $('#edit-hotel-phone').value = phone;
+// Update countdown display if it exists in DOM
+function updateCountdownDisplay() {
+    const el = $('#countdown-number');
+    if (!el) return;
+    updateCountdown();
 }
 
 // --- Countdown ---
@@ -962,6 +1013,8 @@ function updateCountdown() {
     const endStr = localStorage.getItem('tripEndDate');
     const numberEl = $('#countdown-number');
     const labelEl = $('#countdown-label');
+
+    if (!numberEl || !labelEl) return;
 
     if (!startStr) {
         numberEl.textContent = '-';
@@ -1035,6 +1088,10 @@ function initCurrency() {
 }
 
 async function fetchExchangeRate() {
+    const btn = $('#fetch-rate');
+    btn.disabled = true;
+    btn.textContent = '更新中...';
+
     try {
         const res = await fetch('https://api.exchangerate-api.com/v4/latest/JPY');
         const data = await res.json();
@@ -1048,10 +1105,16 @@ async function fetchExchangeRate() {
             if (jpy > 0) {
                 $('#twd-input').value = (jpy * rate).toFixed(0);
             }
+            btn.textContent = '✅ 已更新';
+            setTimeout(() => { btn.textContent = '更新匯率'; }, 2000);
         }
     } catch (err) {
+        btn.textContent = '❌ 失敗';
+        setTimeout(() => { btn.textContent = '更新匯率'; }, 2000);
         console.error('匯率抓取失敗:', err);
     }
+
+    btn.disabled = false;
 }
 
 // --- Emergency Info ---

@@ -105,7 +105,7 @@ function initSubpage(page) {
 }
 
 function initSettingsPage() {
-    const currentSize = localStorage.getItem('fontSize') || 'medium';
+    const currentSize = localStorage.getItem('fontSize') || 'small';
     $$('.font-size-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.size === currentSize);
         btn.addEventListener('click', () => {
@@ -123,7 +123,7 @@ function setFontSize(size) {
 }
 
 function applyStoredFontSize() {
-    const size = localStorage.getItem('fontSize') || 'medium';
+    const size = localStorage.getItem('fontSize') || 'small';
     document.documentElement.classList.add(`font-${size}`);
 }
 
@@ -558,23 +558,41 @@ function updateRandomList() {
         return;
     }
 
-    // Build category filters
+    // Build category filters (collapsible - show max 4 + expand)
     const categories = [...new Set(randomPlaces.map(p => p.type).filter(Boolean))];
+    const MAX_VISIBLE = 4;
+    const visibleCats = categories.slice(0, MAX_VISIBLE);
+    const hiddenCats = categories.slice(MAX_VISIBLE);
+
     filtersContainer.innerHTML = `
         <button class="filter-btn ${selectedCategory === 'all' ? 'active' : ''}" data-category="all">全部</button>
-        ${categories.map(cat => `
+        ${visibleCats.map(cat => `
             <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}">${getCategoryEmoji(cat)} ${cat}</button>
         `).join('')}
+        ${hiddenCats.length > 0 ? `
+            <button class="filter-btn filter-expand-btn" data-expand="places">+${hiddenCats.length} 更多</button>
+            ${hiddenCats.map(cat => `
+                <button class="filter-btn filter-hidden ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}" style="display:none;">${getCategoryEmoji(cat)} ${cat}</button>
+            `).join('')}
+        ` : ''}
     `;
 
+    // Bind expand button
+    const expandBtn = filtersContainer.querySelector('.filter-expand-btn');
+    if (expandBtn) {
+        expandBtn.addEventListener('click', () => {
+            filtersContainer.querySelectorAll('.filter-hidden').forEach(b => b.style.display = '');
+            expandBtn.style.display = 'none';
+        });
+    }
+
     // Bind filter clicks
-    filtersContainer.querySelectorAll('.filter-btn').forEach(btn => {
+    filtersContainer.querySelectorAll('.filter-btn:not(.filter-expand-btn)').forEach(btn => {
         btn.addEventListener('click', () => {
             selectedCategory = btn.dataset.category;
             filtersContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             renderFilteredList();
-            // Hide previous pick
             $('#random-pick').style.display = 'none';
         });
     });
@@ -677,17 +695,36 @@ function updateFoodList() {
         return;
     }
 
-    // Build category filters
+    // Build category filters (collapsible)
     const categories = [...new Set(foodList.map(f => f.type).filter(Boolean))];
+    const MAX_VISIBLE_FOOD = 4;
+    const visibleCats = categories.slice(0, MAX_VISIBLE_FOOD);
+    const hiddenCats = categories.slice(MAX_VISIBLE_FOOD);
+
     filtersContainer.innerHTML = `
         <button class="filter-btn ${selectedFoodCategory === 'all' ? 'active' : ''}" data-category="all">全部</button>
-        ${categories.map(cat => `
+        ${visibleCats.map(cat => `
             <button class="filter-btn ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}">${getFoodEmoji(cat)} ${cat}</button>
         `).join('')}
+        ${hiddenCats.length > 0 ? `
+            <button class="filter-btn filter-expand-btn" data-expand="food">+${hiddenCats.length} 更多</button>
+            ${hiddenCats.map(cat => `
+                <button class="filter-btn filter-hidden ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}" style="display:none;">${getFoodEmoji(cat)} ${cat}</button>
+            `).join('')}
+        ` : ''}
     `;
 
+    // Bind expand button
+    const expandBtn = filtersContainer.querySelector('.filter-expand-btn');
+    if (expandBtn) {
+        expandBtn.addEventListener('click', () => {
+            filtersContainer.querySelectorAll('.filter-hidden').forEach(b => b.style.display = '');
+            expandBtn.style.display = 'none';
+        });
+    }
+
     // Bind filter clicks
-    filtersContainer.querySelectorAll('.filter-btn').forEach(btn => {
+    filtersContainer.querySelectorAll('.filter-btn:not(.filter-expand-btn)').forEach(btn => {
         btn.addEventListener('click', () => {
             selectedFoodCategory = btn.dataset.category;
             filtersContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));

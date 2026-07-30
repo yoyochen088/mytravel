@@ -1301,6 +1301,7 @@ function initAI() {
     const input = $('#ai-input');
     const sendBtn = $('#ai-send');
     const imageInput = $('#ai-image-input');
+    const voiceBtn = $('#ai-voice');
 
     sendBtn.addEventListener('click', () => sendAIMessage());
     input.addEventListener('keydown', (e) => {
@@ -1310,13 +1311,21 @@ function initAI() {
         }
     });
 
-    // Image upload for translation
+    // Image upload
     imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
             handleImageUpload(file);
-            imageInput.value = ''; // Reset for next use
+            imageInput.value = '';
         }
+    });
+
+    // Voice input
+    voiceBtn.addEventListener('click', () => toggleVoiceInput());
+
+    // Quick actions
+    $$('.ai-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => handleQuickAction(btn.dataset.action));
     });
 
     // Long press header to reset API key
@@ -1333,6 +1342,187 @@ function initAI() {
     });
     header.addEventListener('touchend', () => clearTimeout(pressTimer));
     header.addEventListener('touchmove', () => clearTimeout(pressTimer));
+}
+
+// --- Voice Input (Web Speech API) ---
+let recognition = null;
+let isRecording = false;
+
+function toggleVoiceInput() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('你的瀏覽器不支援語音輸入');
+        return;
+    }
+
+    if (isRecording) {
+        stopVoiceInput();
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.lang = 'zh-TW';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    const voiceBtn = $('#ai-voice');
+    const input = $('#ai-input');
+
+    recognition.onstart = () => {
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        input.placeholder = '🎙️ 正在聽...';
+    };
+
+    recognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+        }
+        input.value = transcript;
+
+        // If final result, auto-send
+        if (event.results[event.results.length - 1].isFinal) {
+            stopVoiceInput();
+            if (transcript.trim()) {
+                sendAIMessage();
+            }
+        }
+    };
+
+    recognition.onerror = (event) => {
+        console.log('Speech recognition error:', event.error);
+        stopVoiceInput();
+    };
+
+    recognition.onend = () => {
+        stopVoiceInput();
+    };
+
+    recognition.start();
+}
+
+function stopVoiceInput() {
+    isRecording = false;
+    const voiceBtn = $('#ai-voice');
+    voiceBtn.classList.remove('recording');
+    $('#ai-input').placeholder = '打字或拍照翻譯...';
+    if (recognition) {
+        recognition.stop();
+        recognition = null;
+    }
+}
+
+// --- Quick Actions ---
+function handleQuickAction(action) {
+    switch (action) {
+        case 'recommend':
+            triggerFoodRecommendation();
+            break;
+        case 'translate':
+            triggerTranslateMode();
+            break;
+        case 'identify':
+            triggerIdentifyMode();
+            break;
+    }
+}
+
+function triggerFoodRecommendation() {
+    const now = new Date();
+    const hour = now.getHours();
+    let mealType = '吃的';
+    if (hour < 10) mealType = '早餐';
+    else if (hour < 14) mealType = '午餐';
+    else if (hour < 17) mealType = '下午茶或點心';
+    else mealType = '晚餐';
+
+    let msg = `現在${hour}點了，我想吃${mealType}。`;
+    if (currentPosition) {
+        msg += `我目前在 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)} 附近。`;
+    }
+    msg += '根據我的美食清單，推薦我現在可以去哪家？考慮營業時間和距離。';
+
+    $('#ai-input').value = msg;
+    sendAIMessage();
+}
+
+function triggerTranslateMode() {
+    const text = prompt('輸入你要翻譯的中文：\n（會翻成日文，大字顯示給店員看）');
+    if (!text || !text.trim()) return;
+
+    // Check API key
+    if (!localStorage.getItem('geminiApiKey')) {
+        const key = prompt('首次使用請輸入 Gemini API Key：\n（到 https://aistudio.google.com/apikey 免費申請）');
+        if (key && key.trim()) {
+            localStorage.setItem('geminiApiKey', key.trim());
+        } else {
+            return;
+        }
+    }
+
+    appendAIMessage(`🎌 翻譯：${text}`, 'user');
+    const loadingEl = appendAIMessage('翻譯中...', 'bot loading');
+
+    callGeminiTranslate(text.trim()).then(result => {
+        loadingEl.remove();
+        // Show translation in big readable format
+        const html = `
+            <div class="translation-label">🇹🇼 中文</div>
+            <p>${text}</p>
+            <div class="translation-block">
+                <div class="translation-label">🇯🇵 日文</div>
+                ${result}
+            </div>
+        `;
+        appendAIMessageRaw(html, 'bot');
+    }).catch(err => {
+        loadingEl.remove();
+        appendAIMessage(`❌ 翻譯失敗：${err.message}`, 'bot');
+    });
+}
+
+function triggerIdentifyMode() {
+    // Open camera for photo identification
+    const imageInput = $('#ai-image-input');
+    // Set a flag so we know to use "identify" prompt instead of "translate"
+    window._aiImageMode = 'identify';
+    imageInput.click();
+}
+
+async function callGeminiTranslate(text) {
+    const requestBody = {
+        contents: [{
+            role: 'user',
+            parts: [{ text: `請把以下中文翻譯成日文。只回覆日文翻譯結果，不要加其他說明。如果是對話場景，提供最自然的日文說法。\n\n${text}` }]
+        }],
+        generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 512
+        }
+    };
+
+    let response = await fetch(getGeminiEndpoint(GEMINI_MODEL), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+        response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+        });
+    }
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '翻譯失敗';
 }
 
 async function sendAIMessage() {
@@ -1504,15 +1694,21 @@ async function handleImageUpload(file) {
     const base64 = await fileToBase64(file);
     const mimeType = file.type || 'image/jpeg';
 
+    // Determine mode
+    const mode = window._aiImageMode || 'translate';
+    window._aiImageMode = null;
+
+    const modeLabel = mode === 'identify' ? '🏯 辨識這個地方' : '📷 翻譯這張圖片';
+
     // Show image in chat
     const imgHtml = `<img src="data:${mimeType};base64,${base64}" alt="uploaded image">`;
-    appendAIMessageRaw(`📷 翻譯這張圖片：${imgHtml}`, 'user');
+    appendAIMessageRaw(`${modeLabel}：${imgHtml}`, 'user');
 
     // Show loading
-    const loadingEl = appendAIMessage('辨識翻譯中...', 'bot loading');
+    const loadingEl = appendAIMessage(mode === 'identify' ? '辨識中...' : '翻譯中...', 'bot loading');
 
     try {
-        const response = await callGeminiWithImage(base64, mimeType);
+        const response = await callGeminiWithImage(base64, mimeType, mode);
         loadingEl.remove();
         appendAIMessage(response, 'bot');
     } catch (err) {
@@ -1544,8 +1740,13 @@ function appendAIMessageRaw(html, type) {
     return div;
 }
 
-async function callGeminiWithImage(base64, mimeType) {
-    const prompt = '請翻譯這張圖片中的所有日文/外文文字成繁體中文。如果是菜單，請列出每道菜的名稱和中文翻譯。如果是路標或指示牌，請說明內容。格式清楚易讀。';
+async function callGeminiWithImage(base64, mimeType, mode) {
+    let prompt;
+    if (mode === 'identify') {
+        prompt = '請辨識這張照片中的建築物、神社、寺廟、地標或景點。告訴我這是什麼地方、它的歷史背景和有趣的資訊。用繁體中文回答，格式清楚易讀。';
+    } else {
+        prompt = '請翻譯這張圖片中的所有日文/外文文字成繁體中文。如果是菜單，請列出每道菜的名稱和中文翻譯。如果是路標或指示牌，請說明內容。格式清楚易讀。';
+    }
 
     const requestBody = {
         contents: [{
@@ -1573,7 +1774,7 @@ async function callGeminiWithImage(base64, mimeType) {
     });
 
     if (!response.ok) {
-        console.log(`圖片翻譯：${GEMINI_MODEL} 失敗，切換備援 ${GEMINI_MODEL_FALLBACK}`);
+        console.log(`圖片處理：${GEMINI_MODEL} 失敗，切換備援 ${GEMINI_MODEL_FALLBACK}`);
         response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

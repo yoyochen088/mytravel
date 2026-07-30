@@ -140,18 +140,20 @@
                     <div id="ai-messages" class="ai-messages">
                         <div class="ai-message bot">
                             <p>嗨！我是你的旅遊 AI 助手 🤖</p>
-                            <p>你可以問我：</p>
-                            <ul>
-                                <li>行程延遲了怎麼調整？</li>
-                                <li>附近有什麼推薦的？</li>
-                                <li>📷 拍照翻譯日文</li>
-                            </ul>
+                            <p>你可以用打字、語音或拍照跟我互動：</p>
                         </div>
                     </div>
+                    <!-- Quick Actions -->
+                    <div class="ai-quick-actions">
+                        <button class="ai-quick-btn" data-action="recommend">🍽️ 推薦吃的</button>
+                        <button class="ai-quick-btn" data-action="translate">🎌 翻譯對話</button>
+                        <button class="ai-quick-btn" data-action="identify">🏯 這是什麼</button>
+                    </div>
                     <div class="ai-input-area">
-                        <label for="ai-image-input" class="ai-image-btn" title="上傳圖片翻譯">📷</label>
+                        <label for="ai-image-input" class="ai-image-btn" title="拍照翻譯/辨識">📷</label>
                         <input type="file" id="ai-image-input" accept="image/*" capture="environment" style="display:none;">
                         <input type="text" id="ai-input" placeholder="打字或拍照翻譯..." autocomplete="off">
+                        <button id="ai-voice" class="ai-voice-btn" title="語音輸入">🎙️</button>
                         <button id="ai-send" class="ai-send-btn">➤</button>
                     </div>
                 </div>
@@ -307,9 +309,7 @@
                 <span class="countdown-label" id="countdown-label">設定出發日期</span>
             </div>
             <div class="countdown-settings">
-                <label class="hint">出發日</label>
                 <input type="date" id="trip-start-date">
-                <label class="hint">結束日</label>
                 <input type="date" id="trip-end-date">
                 <button id="save-trip-dates" class="tool-btn">修改</button>
             </div>

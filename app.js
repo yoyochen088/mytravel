@@ -13,6 +13,7 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
+    applyStoredFontSize();
     initTabs();
     initClock();
     initLocation();
@@ -98,8 +99,32 @@ function initSubpage(page) {
             initCountdown();
             break;
         case 'settings':
+            initSettingsPage();
             break;
     }
+}
+
+function initSettingsPage() {
+    const currentSize = localStorage.getItem('fontSize') || 'medium';
+    $$('.font-size-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.size === currentSize);
+        btn.addEventListener('click', () => {
+            setFontSize(btn.dataset.size);
+            $$('.font-size-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+}
+
+function setFontSize(size) {
+    document.documentElement.classList.remove('font-small', 'font-medium', 'font-large');
+    document.documentElement.classList.add(`font-${size}`);
+    localStorage.setItem('fontSize', size);
+}
+
+function applyStoredFontSize() {
+    const size = localStorage.getItem('fontSize') || 'medium';
+    document.documentElement.classList.add(`font-${size}`);
 }
 
 // --- Clock ---
@@ -1887,13 +1912,14 @@ function triggerTranslateMode() {
 
     callGeminiTranslate(text.trim()).then(result => {
         loadingEl.remove();
-        // Show translation in big readable format
+        // Show translation in big readable format with speak button
+        const speakId = 'speak-' + Date.now();
         const html = `
             <div class="translation-label">🇹🇼 中文</div>
             <p>${text}</p>
             <div class="translation-block">
-                <div class="translation-label">🇯🇵 日文</div>
-                ${result}
+                <div class="translation-label">🇯🇵 日文 <button class="speak-btn" onclick="speakJapanese('${speakId}')">🔊 播放</button></div>
+                <span id="${speakId}">${result}</span>
             </div>
         `;
         appendAIMessageRaw(html, 'bot');
@@ -1944,6 +1970,34 @@ async function callGeminiTranslate(text) {
 
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '翻譯失敗';
+}
+
+// --- Text to Speech (Japanese) ---
+function speakJapanese(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+
+    const text = el.textContent.trim();
+    if (!text) return;
+
+    if (!('speechSynthesis' in window)) {
+        alert('你的瀏覽器不支援語音播放');
+        return;
+    }
+
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ja-JP';
+    utterance.rate = 0.85; // Slightly slower for clarity
+
+    // Try to find a Japanese voice
+    const voices = speechSynthesis.getVoices();
+    const jaVoice = voices.find(v => v.lang.startsWith('ja'));
+    if (jaVoice) utterance.voice = jaVoice;
+
+    speechSynthesis.speak(utterance);
 }
 
 async function sendAIMessage() {

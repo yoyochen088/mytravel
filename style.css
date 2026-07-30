@@ -18,10 +18,17 @@
     --success: #34a853;
     --shadow: 0 2px 8px rgba(0,0,0,0.1);
     --radius: 12px;
+    --font-scale: 1;
 }
+
+/* Font size classes */
+html.font-small { --font-scale: 0.85; }
+html.font-medium { --font-scale: 1; }
+html.font-large { --font-scale: 1.2; }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: calc(16px * var(--font-scale));
     background: var(--bg);
     color: var(--text);
     margin: 0;
@@ -671,6 +678,45 @@ body {
     gap: 16px;
 }
 
+.setting-group {
+    margin-bottom: 12px;
+}
+
+.setting-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.font-size-toggle {
+    display: flex;
+    gap: 8px;
+}
+
+.font-size-btn {
+    flex: 1;
+    padding: 10px;
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.font-size-btn.active {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.font-size-btn[data-size="small"] { font-size: 0.8rem; }
+.font-size-btn[data-size="large"] { font-size: 1.1rem; }
+
 .setting-item {
     display: flex;
     flex-direction: column;
@@ -1246,6 +1292,20 @@ body {
     font-size: 0.7rem;
     color: var(--text-secondary);
     margin-bottom: 4px;
+}
+
+.speak-btn {
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.speak-btn:active {
+    background: var(--primary-light);
 }
 
 .ai-input-area {

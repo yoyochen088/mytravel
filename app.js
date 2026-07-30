@@ -1339,13 +1339,19 @@ async function savePackingItem(action, item, idx) {
     try {
         const res = await fetch(CONFIG_SCRIPT_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
         });
+
+        if (!res.ok && res.status !== 0) {
+            let errMsg = `HTTP ${res.status}`;
+            try { const d = await res.json(); errMsg = d.error || errMsg; } catch (e) {}
+            throw new Error(errMsg);
+        }
 
         let result = { success: true };
         try { result = await res.json(); } catch (e) {}
-
         if (result.error) throw new Error(result.error);
 
         // Update local data
@@ -1567,20 +1573,23 @@ async function saveScheduleItem(action, item, idx) {
     try {
         const res = await fetch(CONFIG_SCRIPT_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
         });
 
-        // Apps Script redirects with no-cors may not give readable response
-        // Try to parse, fallback to assuming success
-        let result = { success: true };
-        try {
-            result = await res.json();
-        } catch (e) {}
-
-        if (result.error) {
-            throw new Error(result.error);
+        // Apps Script returns 200 on success after redirect
+        // If we get any 2xx response, treat as success
+        if (!res.ok && res.status !== 0) {
+            let errMsg = `HTTP ${res.status}`;
+            try { const d = await res.json(); errMsg = d.error || errMsg; } catch (e) {}
+            throw new Error(errMsg);
         }
+
+        // Try to read response, but don't fail if we can't
+        let result = { success: true };
+        try { result = await res.json(); } catch (e) {}
+        if (result.error) throw new Error(result.error);
 
         // Update local data
         if (action === 'add') {
@@ -1650,12 +1659,14 @@ async function processSyncQueue() {
         try {
             const res = await fetch(CONFIG_SCRIPT_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(entry.payload)
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(entry.payload),
+                redirect: 'follow'
             });
-            let result = {};
-            try { result = await res.json(); } catch (e) {}
-            if (result.error) {
+            // If we get a response (even opaque), consider it success
+            if (res.ok || res.status === 0) {
+                // Success, don't add to remaining
+            } else {
                 remaining.push(entry);
             }
         } catch (e) {

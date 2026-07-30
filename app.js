@@ -894,8 +894,25 @@ function showLoading(show) {
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('SW registered:', reg.scope))
+            .then(reg => {
+                console.log('SW registered:', reg.scope);
+                // Check for updates and auto-reload
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                            // New SW activated, reload to get new content
+                            window.location.reload();
+                        }
+                    });
+                });
+            })
             .catch(err => console.log('SW registration failed:', err));
+
+        // Also detect controller change (when skipWaiting + claim takes effect)
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
     }
 }
 

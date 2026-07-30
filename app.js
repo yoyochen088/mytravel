@@ -901,8 +901,11 @@ function initPullToRefresh() {
     const indicator = $('#pull-indicator');
 
     document.addEventListener('touchstart', (e) => {
+        // Don't trigger on AI tab or More tab subpages
         const activeTab = document.querySelector('.tab-content.active');
-        if (activeTab && activeTab.scrollTop === 0) {
+        if (!activeTab) return;
+        if (activeTab.id === 'tab-ai' || activeTab.id === 'tab-more') return;
+        if (activeTab.scrollTop === 0) {
             startY = e.touches[0].clientY;
             pulling = true;
         }
@@ -923,7 +926,6 @@ function initPullToRefresh() {
         pulling = false;
         if (indicator.classList.contains('visible')) {
             indicator.classList.remove('visible');
-            // Use center loading spinner
             showLoading(true);
             await refreshAll();
             showLoading(false);

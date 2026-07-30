@@ -115,8 +115,8 @@ body {
     background: white;
     border-top: 1px solid var(--border);
     flex-shrink: 0;
-    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
-    padding-top: 6px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+    padding-top: 8px;
 }
 
 .bottom-tab {

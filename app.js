@@ -40,6 +40,11 @@ function initTabs() {
             if (subpage) subpage.style.display = 'none';
             const moreMenu = document.querySelector('#tab-more .more-menu');
             if (moreMenu) moreMenu.style.display = 'flex';
+            // Reset explore filters to collapsed state
+            if (btn.dataset.tab === 'explore') {
+                updateRandomList();
+                updateFoodList();
+            }
         });
     });
 

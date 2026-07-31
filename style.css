@@ -22,9 +22,9 @@
 }
 
 /* Font size classes - applied to html so all rem units scale */
-html.font-small { font-size: 14px; }
-html.font-medium { font-size: 18px; }
+html.font-normal { font-size: 18px; }
 html.font-large { font-size: 22px; }
+html.font-xlarge { font-size: 28px; }
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -713,8 +713,8 @@ body {
     color: var(--primary);
 }
 
-.font-size-btn[data-size="small"] { font-size: 0.8rem; }
-.font-size-btn[data-size="large"] { font-size: 1.1rem; }
+.font-size-btn[data-size="normal"] { font-size: 0.85rem; }
+.font-size-btn[data-size="xlarge"] { font-size: 1.2rem; }
 
 .setting-item {
     display: flex;

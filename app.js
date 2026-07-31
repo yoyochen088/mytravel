@@ -110,7 +110,7 @@ function initSubpage(page) {
 }
 
 function initSettingsPage() {
-    const currentSize = localStorage.getItem('fontSize') || 'small';
+    const currentSize = localStorage.getItem('fontSize') || 'normal';
     $$('.font-size-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.size === currentSize);
         btn.addEventListener('click', () => {
@@ -122,13 +122,13 @@ function initSettingsPage() {
 }
 
 function setFontSize(size) {
-    document.documentElement.classList.remove('font-small', 'font-medium', 'font-large');
+    document.documentElement.classList.remove('font-normal', 'font-large', 'font-xlarge');
     document.documentElement.classList.add(`font-${size}`);
     localStorage.setItem('fontSize', size);
 }
 
 function applyStoredFontSize() {
-    const size = localStorage.getItem('fontSize') || 'small';
+    const size = localStorage.getItem('fontSize') || 'normal';
     document.documentElement.classList.add(`font-${size}`);
 }
 

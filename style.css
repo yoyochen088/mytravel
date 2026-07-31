@@ -887,7 +887,6 @@ body {
     display: flex;
     gap: 8px;
     align-items: center;
-    flex-wrap: wrap;
 }
 
 .countdown-settings input {
@@ -1000,6 +999,68 @@ body {
 .tool-btn:disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* Weather */
+.weather-display {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.weather-alert {
+    padding: 10px 12px;
+    background: #fff3cd;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    color: #856404;
+}
+
+.weather-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.weather-day {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    gap: 10px;
+}
+
+.weather-day.rainy {
+    border-left: 3px solid #d93025;
+}
+
+.weather-day .weather-date {
+    font-size: 0.8rem;
+    font-weight: 500;
+    min-width: 70px;
+}
+
+.weather-day .weather-icon {
+    font-size: 1.3rem;
+}
+
+.weather-day .weather-temp {
+    font-size: 0.85rem;
+    font-weight: 500;
+    flex: 1;
+}
+
+.weather-day .weather-rain {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.weather-day.rainy .weather-rain {
+    color: #d93025;
+    font-weight: 600;
 }
 
 /* Schedule Management */

@@ -50,6 +50,7 @@
                     <div id="current-location" class="location-display">
                         📍 取得位置中...
                     </div>
+                    <div id="current-weather" class="weather-display" style="display:none;"></div>
                 </div>
 
                 <div id="current-activity" class="card highlight-card">
@@ -193,7 +194,7 @@
                         <span class="more-arrow">›</span>
                     </div>
                 </div>
-                <p class="hint" style="text-align:center;margin-top:16px;">版本 v32</p>
+                <p class="hint" style="text-align:center;margin-top:16px;">版本 v34</p>
 
                 <!-- Sub-pages (hidden by default) -->
                 <div id="more-subpage" class="more-subpage" style="display:none;">
@@ -336,6 +337,11 @@
                 <input type="date" id="trip-end-date">
                 <button id="save-trip-dates" class="tool-btn">修改</button>
             </div>
+        </div>
+        <div class="tool-section" id="trip-weather-section" style="display:none;">
+            <div class="tool-header">🌤️ 旅程天氣</div>
+            <div id="weather-alert" class="weather-alert" style="display:none;"></div>
+            <div id="trip-weather-list" class="weather-list"></div>
         </div>
     </template>
 

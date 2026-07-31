@@ -102,6 +102,7 @@ function initSubpage(page) {
             break;
         case 'trip-dates':
             initCountdown();
+            loadTripWeather();
             break;
         case 'settings':
             initSettingsPage();
@@ -344,8 +345,8 @@ async function loadData() {
     }
 
     showLoading(false);
+    updateCurrentWeather();
 }
-
 // --- CSV Parsing ---
 function parseCSVLine(line) {
     const result = [];
@@ -1505,6 +1506,173 @@ async function saveUserInfoToServer(fields) {
         } catch (e) {}
     } catch (err) {
         console.error('儲存到伺服器失敗:', err);
+    }
+}
+
+
+// ==================== 天氣 (Open-Meteo) ====================
+
+// Weather code to emoji mapping
+function getWeatherEmoji(code) {
+    if (code === 0) return '☀️';
+    if (code <= 3) return '⛅';
+    if (code <= 48) return '🌫️';
+    if (code <= 55) return '🌦️';
+    if (code <= 65) return '🌧️';
+    if (code <= 77) return '🌨️';
+    if (code <= 82) return '🌧️';
+    if (code <= 86) return '🌨️';
+    if (code >= 95) return '⛈️';
+    return '🌤️';
+}
+
+function getWeatherDesc(code) {
+    if (code === 0) return '晴';
+    if (code <= 3) return '多雲';
+    if (code <= 48) return '霧';
+    if (code <= 55) return '小雨';
+    if (code <= 65) return '雨';
+    if (code <= 77) return '雪';
+    if (code <= 82) return '陣雨';
+    if (code <= 86) return '大雪';
+    if (code >= 95) return '雷雨';
+    return '晴時多雲';
+}
+
+async function fetchWeather(lat, lng, days) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia%2FTokyo&forecast_days=${days || 7}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Weather API: ${res.status}`);
+    return await res.json();
+}
+
+// Show current weather on "Now" tab
+async function updateCurrentWeather() {
+    const el = $('#current-weather');
+    if (!el) return;
+
+    let lat, lng;
+    if (currentPosition) {
+        lat = currentPosition.lat;
+        lng = currentPosition.lng;
+    } else {
+        // Default to Tokyo if no GPS
+        lat = 35.6762;
+        lng = 139.6503;
+    }
+
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,precipitation&daily=precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=1`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const temp = Math.round(data.current.temperature_2m);
+        const code = data.current.weather_code;
+        const rainProb = data.daily.precipitation_probability_max[0];
+        const emoji = getWeatherEmoji(code);
+        const desc = getWeatherDesc(code);
+
+        el.textContent = `${emoji} ${temp}°C ${desc}　降雨 ${rainProb}%`;
+        el.style.display = 'block';
+    } catch (e) {
+        console.log('天氣取得失敗:', e);
+    }
+}
+
+// Show trip weather forecast in trip-dates subpage
+async function loadTripWeather() {
+    const section = $('#trip-weather-section');
+    const container = $('#trip-weather-list');
+    const alertEl = $('#weather-alert');
+    if (!section || !container) return;
+
+    const startStr = localStorage.getItem('tripStartDate');
+    const endStr = localStorage.getItem('tripEndDate');
+    if (!startStr || !endStr) return;
+
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Open-Meteo only provides 16 days forecast
+    const maxForecastDate = new Date(today);
+    maxForecastDate.setDate(maxForecastDate.getDate() + 15);
+
+    if (start > maxForecastDate) {
+        section.style.display = 'block';
+        container.innerHTML = '<p class="hint">天氣預報僅提供未來 16 天，旅程日期超出範圍</p>';
+        return;
+    }
+
+    // Use GPS or default Tokyo coordinates
+    let lat = 35.6762, lng = 139.6503;
+    if (currentPosition) {
+        lat = currentPosition.lat;
+        lng = currentPosition.lng;
+    }
+
+    try {
+        const data = await fetchWeather(lat, lng, 16);
+        const dates = data.daily.time;
+        const maxTemps = data.daily.temperature_2m_max;
+        const minTemps = data.daily.temperature_2m_min;
+        const rainProbs = data.daily.precipitation_probability_max;
+        const codes = data.daily.weather_code;
+
+        // Filter to trip dates
+        const tripDays = [];
+        const rainyDays = [];
+
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const dateStr = d.toISOString().split('T')[0];
+            const idx = dates.indexOf(dateStr);
+            if (idx !== -1) {
+                const rain = rainProbs[idx];
+                const dayInfo = {
+                    date: dateStr,
+                    dayLabel: d.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                    emoji: getWeatherEmoji(codes[idx]),
+                    maxTemp: Math.round(maxTemps[idx]),
+                    minTemp: Math.round(minTemps[idx]),
+                    rain: rain
+                };
+                tripDays.push(dayInfo);
+                if (rain >= 50) rainyDays.push(dayInfo);
+            }
+        }
+
+        if (tripDays.length === 0) {
+            section.style.display = 'block';
+            container.innerHTML = '<p class="hint">無法取得旅程期間天氣資料</p>';
+            return;
+        }
+
+        // Rain alert
+        if (rainyDays.length > 0) {
+            const rainyDateList = rainyDays.map(d => d.dayLabel).join('、');
+            alertEl.textContent = `☔ 提醒：${rainyDateList} 降雨機率高，記得帶傘！`;
+            alertEl.style.display = 'block';
+        } else {
+            alertEl.style.display = 'none';
+        }
+
+        // Render list
+        container.innerHTML = tripDays.map(day => `
+            <div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}">
+                <span class="weather-date">${day.dayLabel}</span>
+                <span class="weather-icon">${day.emoji}</span>
+                <span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span>
+                <span class="weather-rain">降雨 ${day.rain}%</span>
+            </div>
+        `).join('');
+
+        section.style.display = 'block';
+    } catch (e) {
+        console.log('旅程天氣取得失敗:', e);
+        section.style.display = 'block';
+        container.innerHTML = '<p class="hint">天氣資料載入失敗</p>';
     }
 }
 

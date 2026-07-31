@@ -304,35 +304,26 @@ async function loadData() {
     showLoading(true);
 
     try {
-        // Load schedule
-        const scheduleUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_SCHEDULE);
-        const scheduleRes = await fetch(scheduleUrl);
-        if (!scheduleRes.ok) throw new Error(`HTTP ${scheduleRes.status}`);
-        const scheduleCsv = await scheduleRes.text();
-        scheduleData = parseScheduleCSV(scheduleCsv);
+        // Fetch all sheets in parallel
+        const [scheduleRes, randomRes, foodRes] = await Promise.allSettled([
+            fetch(getSheetCsvUrl(sheetId, window.SHEET_NAME_SCHEDULE)),
+            fetch(getSheetCsvUrl(sheetId, window.SHEET_NAME_RANDOM)),
+            fetch(getSheetCsvUrl(sheetId, window.SHEET_NAME_FOOD))
+        ]);
 
-        // Load random places
-        try {
-            const randomUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_RANDOM);
-            const randomRes = await fetch(randomUrl);
-            if (randomRes.ok) {
-                const randomCsv = await randomRes.text();
-                randomPlaces = parseRandomCSV(randomCsv);
-            }
-        } catch (e) {
-            console.log('隨機景點分頁讀取失敗（可能不存在）:', e);
+        // Parse schedule
+        if (scheduleRes.status === 'fulfilled' && scheduleRes.value.ok) {
+            scheduleData = parseScheduleCSV(await scheduleRes.value.text());
         }
 
-        // Load food list
-        try {
-            const foodUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_FOOD);
-            const foodRes = await fetch(foodUrl);
-            if (foodRes.ok) {
-                const foodCsv = await foodRes.text();
-                foodList = parseFoodCSV(foodCsv);
-            }
-        } catch (e) {
-            console.log('美食分頁讀取失敗（可能不存在）:', e);
+        // Parse random places
+        if (randomRes.status === 'fulfilled' && randomRes.value.ok) {
+            randomPlaces = parseRandomCSV(await randomRes.value.text());
+        }
+
+        // Parse food
+        if (foodRes.status === 'fulfilled' && foodRes.value.ok) {
+            foodList = parseFoodCSV(await foodRes.value.text());
         }
 
         updateNowTab();
@@ -538,12 +529,22 @@ function initDateSelector() {
         updateSelectedDateDisplay();
         updateTimeline();
     });
+
+    $('#timeline-date-picker').addEventListener('change', (e) => {
+        if (e.target.value) {
+            selectedDate = new Date(e.target.value + 'T00:00:00');
+            updateSelectedDateDisplay();
+            updateTimeline();
+        }
+    });
 }
 
 function updateSelectedDateDisplay() {
     $('#selected-date').textContent = selectedDate.toLocaleDateString('zh-TW', {
         month: 'long', day: 'numeric', weekday: 'short'
     });
+    const picker = $('#timeline-date-picker');
+    if (picker) picker.value = selectedDate.toISOString().split('T')[0];
 }
 
 // --- Random Places ---
@@ -1065,6 +1066,7 @@ function initCountdown() {
         if (savingDates) return;
         savingDates = true;
         $('#save-trip-dates').disabled = true;
+        $('#save-trip-dates').textContent = '儲存中...';
 
         const startVal = startInput.value;
         const endVal = endInput.value;
@@ -1081,6 +1083,9 @@ function initCountdown() {
         alert('✅ 旅程日期已儲存');
         savingDates = false;
         $('#save-trip-dates').disabled = false;
+        $('#save-trip-dates').textContent = '修改';
+        // Reload weather
+        loadTripWeather();
     });
 }
 
@@ -1625,24 +1630,25 @@ async function loadTripWeather() {
         const tripDays = [];
         const rainyDays = [];
 
-        const currentDate = new Date(start);
-        while (currentDate <= end) {
-            const dateStr = currentDate.toISOString().split('T')[0];
-            const idx = dates.indexOf(dateStr);
-            if (idx !== -1) {
-                const rain = rainProbs[idx];
+        // Use string comparison to avoid timezone issues
+        const startDateStr = startStr;
+        const endDateStr = endStr;
+
+        for (let i = 0; i < dates.length; i++) {
+            if (dates[i] >= startDateStr && dates[i] <= endDateStr) {
+                const rain = rainProbs[i];
+                const dateObj = new Date(dates[i] + 'T00:00:00');
                 const dayInfo = {
-                    date: dateStr,
-                    dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
-                    emoji: getWeatherEmoji(codes[idx]),
-                    maxTemp: Math.round(maxTemps[idx]),
-                    minTemp: Math.round(minTemps[idx]),
+                    date: dates[i],
+                    dayLabel: dateObj.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                    emoji: getWeatherEmoji(codes[i]),
+                    maxTemp: Math.round(maxTemps[i]),
+                    minTemp: Math.round(minTemps[i]),
                     rain: rain
                 };
                 tripDays.push(dayInfo);
                 if (rain >= 50) rainyDays.push(dayInfo);
             }
-            currentDate.setDate(currentDate.getDate() + 1);
         }
 
         if (tripDays.length === 0) {
@@ -1721,6 +1727,7 @@ function initScheduleManage() {
         if (saving) return;
         saving = true;
         $('#sched-save').disabled = true;
+        $('#sched-save').textContent = '儲存中...';
 
         const item = {
             date: $('#sched-date').value,
@@ -1735,6 +1742,7 @@ function initScheduleManage() {
             alert('請至少填寫日期、開始時間和地點');
             saving = false;
             $('#sched-save').disabled = false;
+            $('#sched-save').textContent = '儲存';
             return;
         }
 
@@ -1747,6 +1755,7 @@ function initScheduleManage() {
         $('#schedule-form').style.display = 'none';
         saving = false;
         $('#sched-save').disabled = false;
+        $('#sched-save').textContent = '儲存';
     });
 
     // Show sync queue status

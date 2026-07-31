@@ -1,4 +1,4 @@
-const CACHE_NAME = 'travel-helper-v30';
+const CACHE_NAME = 'travel-helper-v31';
 const ASSETS = [
     './',
     './index.html',
@@ -32,40 +32,23 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch - network first for API calls, cache first for assets
+// Fetch - network first for everything (ensures updates are picked up quickly)
 self.addEventListener('fetch', (event) => {
-    const url = new URL(event.request.url);
-
-    // Network first for Google Sheets data
-    if (url.hostname.includes('google') || url.hostname.includes('googleapis')) {
-        event.respondWith(
-            fetch(event.request)
-                .then(response => {
-                    // Cache a copy of the response
+    event.respondWith(
+        fetch(event.request)
+            .then(response => {
+                // Cache a copy for offline use
+                if (response.ok) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => {
                         cache.put(event.request, clone);
                     });
-                    return response;
-                })
-                .catch(() => {
-                    // Fallback to cache if offline
-                    return caches.match(event.request);
-                })
-        );
-        return;
-    }
-
-    // Cache first for static assets
-    event.respondWith(
-        caches.match(event.request).then(cached => {
-            return cached || fetch(event.request).then(response => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, clone);
-                });
+                }
                 return response;
-            });
-        })
+            })
+            .catch(() => {
+                // Offline - fallback to cache
+                return caches.match(event.request);
+            })
     );
 });

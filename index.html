@@ -194,7 +194,7 @@
                         <span class="more-arrow">›</span>
                     </div>
                 </div>
-                <p class="hint" style="text-align:center;margin-top:16px;">版本 v34</p>
+                <p class="hint" style="text-align:center;margin-top:16px;">版本 v35</p>
 
                 <!-- Sub-pages (hidden by default) -->
                 <div id="more-subpage" class="more-subpage" style="display:none;">
@@ -333,9 +333,15 @@
                 <span class="countdown-label" id="countdown-label">設定出發日期</span>
             </div>
             <div class="countdown-settings">
-                <input type="date" id="trip-start-date">
-                <input type="date" id="trip-end-date">
-                <button id="save-trip-dates" class="tool-btn">修改</button>
+                <div class="countdown-row">
+                    <label>出發日</label>
+                    <input type="date" id="trip-start-date">
+                </div>
+                <div class="countdown-row">
+                    <label>回程日</label>
+                    <input type="date" id="trip-end-date">
+                </div>
+                <button id="save-trip-dates" class="tool-btn" style="width:100%;">修改</button>
             </div>
         </div>
         <div class="tool-section" id="trip-weather-section" style="display:none;">
@@ -352,7 +358,7 @@
             <button id="clear-sync-queue" class="tool-btn-sm" style="display:none;margin-bottom:12px;" onclick="clearSyncQueue()">清除待同步</button>
             <div class="schedule-date-selector">
                 <button class="icon-btn" id="sched-prev-day">◀</button>
-                <span id="sched-selected-date"></span>
+                <input type="date" id="sched-date-picker" class="sched-date-picker">
                 <button class="icon-btn" id="sched-next-day">▶</button>
             </div>
             <div id="schedule-edit-list" class="schedule-edit-list">

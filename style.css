@@ -885,8 +885,21 @@ body {
 
 .countdown-settings {
     display: flex;
+    flex-direction: column;
     gap: 8px;
+}
+
+.countdown-settings .countdown-row {
+    display: flex;
     align-items: center;
+    gap: 8px;
+}
+
+.countdown-settings .countdown-row label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    min-width: 50px;
+    color: var(--text-secondary);
 }
 
 .countdown-settings input {
@@ -913,12 +926,13 @@ body {
 
 .currency-row input {
     flex: 1;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid var(--border);
     border-radius: 8px;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 600;
     text-align: right;
+    min-width: 0;
 }
 
 .currency-label {
@@ -963,14 +977,16 @@ body {
 .emergency-item {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     padding: 8px 0;
     border-bottom: 1px solid var(--border);
+    gap: 8px;
 }
 
 .emergency-label {
     font-size: 0.85rem;
     color: var(--text-secondary);
+    flex-shrink: 0;
 }
 
 .emergency-value {
@@ -978,6 +994,8 @@ body {
     font-weight: 500;
     color: var(--primary);
     text-decoration: none;
+    text-align: right;
+    word-break: break-all;
 }
 
 .emergency-edit {
@@ -1030,7 +1048,8 @@ body {
     background: white;
     border-radius: 8px;
     box-shadow: var(--shadow);
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .weather-day.rainy {
@@ -1070,6 +1089,14 @@ body {
     justify-content: center;
     gap: 12px;
     margin-bottom: 16px;
+}
+
+.sched-date-picker {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
 }
 
 #sched-selected-date {

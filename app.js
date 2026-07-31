@@ -1625,14 +1625,15 @@ async function loadTripWeather() {
         const tripDays = [];
         const rainyDays = [];
 
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
+        const currentDate = new Date(start);
+        while (currentDate <= end) {
+            const dateStr = currentDate.toISOString().split('T')[0];
             const idx = dates.indexOf(dateStr);
             if (idx !== -1) {
                 const rain = rainProbs[idx];
                 const dayInfo = {
                     date: dateStr,
-                    dayLabel: d.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                    dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
                     emoji: getWeatherEmoji(codes[idx]),
                     maxTemp: Math.round(maxTemps[idx]),
                     minTemp: Math.round(minTemps[idx]),
@@ -1641,6 +1642,7 @@ async function loadTripWeather() {
                 tripDays.push(dayInfo);
                 if (rain >= 50) rainyDays.push(dayInfo);
             }
+            currentDate.setDate(currentDate.getDate() + 1);
         }
 
         if (tripDays.length === 0) {
@@ -1697,6 +1699,10 @@ function initScheduleManage() {
         updateSchedDateDisplay();
         renderScheduleEditList();
     });
+    $('#sched-date-picker').addEventListener('change', (e) => {
+        schedManageDate = new Date(e.target.value);
+        renderScheduleEditList();
+    });
 
     // Add button
     $('#add-schedule-btn').addEventListener('click', () => {
@@ -1748,13 +1754,10 @@ function initScheduleManage() {
 }
 
 function updateSchedDateDisplay() {
-    $('#sched-selected-date').textContent = schedManageDate.toLocaleDateString('zh-TW', {
-        month: 'long', day: 'numeric', weekday: 'short'
-    });
-    // Set default date for form
-    const dateStr = schedManageDate.toISOString().split('T')[0];
-    const dateInput = $('#sched-date');
-    if (dateInput) dateInput.value = dateStr;
+    const picker = $('#sched-date-picker');
+    if (picker) {
+        picker.value = schedManageDate.toISOString().split('T')[0];
+    }
 }
 
 function renderScheduleEditList() {

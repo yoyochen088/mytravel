@@ -1546,10 +1546,8 @@ function renderPackingBatchInputs() {
             <div class="form-group" style="flex:1;">
                 <input type="text" class="batch-cat" placeholder="分類" value="${item.category || ''}">
             </div>
-            <button class="tool-btn-sm" onclick="removePackingBatchItem(${idx})" style="flex-shrink:0;height:40px;">✕</button>
         </div>
     `).join('');
-    // Focus the last input
     const lastInput = container.querySelector('.batch-input-row:last-child .batch-name');
     if (lastInput) lastInput.focus();
 }
@@ -1667,7 +1665,6 @@ function renderShoppingBatchInputs() {
             <div class="form-group" style="flex:1;">
                 <input type="text" class="batch-cat" placeholder="分類" value="${item.category || ''}">
             </div>
-            <button class="tool-btn-sm" onclick="removeShoppingBatchItem(${idx})" style="flex-shrink:0;height:40px;">✕</button>
         </div>
     `).join('');
     const lastInput = container.querySelector('.batch-input-row:last-child .batch-name');
@@ -1693,12 +1690,16 @@ function renderShoppingList() {
     const container = $('#shopping-list');
     if (!container) return;
     const checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
+    const syncBtn = $('#sync-shopping-checks');
 
     if (shoppingItems.length === 0) {
         container.innerHTML = '<p class="hint">購物清單是空的</p>';
         updateShoppingProgress(0, 0);
+        if (syncBtn) syncBtn.style.display = 'none';
         return;
     }
+
+    if (syncBtn) syncBtn.style.display = 'block';
 
     container.innerHTML = shoppingItems.map((item, idx) => {
         const isChecked = checked.includes(idx);
@@ -1805,12 +1806,16 @@ function renderPackingList() {
     const container = $('#packing-list');
     if (!container) return;
     const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
+    const syncBtn = $('#sync-packing-checks');
 
     if (packingItems.length === 0) {
         container.innerHTML = '<p class="hint">行李清單是空的</p>';
         updatePackingProgress(0, 0);
+        if (syncBtn) syncBtn.style.display = 'none';
         return;
     }
+
+    if (syncBtn) syncBtn.style.display = 'block';
 
     container.innerHTML = packingItems.map(item => {
         const isChecked = checked.includes(item.id);
@@ -2693,8 +2698,10 @@ function initScheduleManage() {
     // Save
     let saving = false;
     $('#sched-save').addEventListener('click', async () => {
-        if (saving || _isWriting) {
-            if (_isWriting) alert('⏳ 請等待上一筆同步完成');
+        if (saving) return;
+        // Only block save for update/delete during sync, not for add
+        if (_isWriting && editingIndex !== null) {
+            alert('⏳ 請等待上一筆同步完成');
             return;
         }
         saving = true;
@@ -2846,8 +2853,31 @@ async function saveScheduleItem(action, item, idx) {
     updateNowTab();
     updateTimeline();
 
-    // Write to server in background (queued to prevent concurrent delete issues)
-    queueServerWrite(payload, action);
+    // Add doesn't need queue (no row conflict), send directly
+    if (action === 'add') {
+        fetch(CONFIG_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        }).then(async res => {
+            let result = {};
+            try { result = await res.json(); } catch (e) { result = { success: true }; }
+            if (result.error) {
+                addToSyncQueue(payload);
+                showSyncStatus();
+                alert('⚠️ 新增寫入失敗：' + result.error);
+            }
+            silentLoadData();
+        }).catch(err => {
+            addToSyncQueue(payload);
+            showSyncStatus();
+            alert('⚠️ 網路異常，已暫存本地');
+        });
+    } else {
+        // Update/Delete need queue to prevent row conflicts
+        queueServerWrite(payload, action);
+    }
 }
 
 // Ensure server writes execute one at a time (especially for deletes)

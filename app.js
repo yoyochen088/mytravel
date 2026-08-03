@@ -1489,43 +1489,13 @@ function initPackingList() {
     loadPackingList();
     initSyncPackingChecks();
 
-    // Add button - show form
+    // Add button - add a new row each time
     const addBtn = $('#add-packing-btn');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
-            editingPackingIndex = null;
-            packingBatchItems = [];
-            renderPackingBatch();
             $('#packing-form').style.display = 'block';
-            $('#packing-item-name').value = '';
-            $('#packing-item-category').value = '';
-            $('#packing-item-name').focus();
-        });
-    }
-
-    // Add row to batch
-    const addRowBtn = $('#packing-add-row');
-    if (addRowBtn) {
-        addRowBtn.addEventListener('click', () => {
-            const name = $('#packing-item-name').value.trim();
-            const category = $('#packing-item-category').value.trim();
-            if (!name) return;
-            packingBatchItems.push({ item: name, category });
-            renderPackingBatch();
-            $('#packing-item-name').value = '';
-            $('#packing-item-name').focus();
-        });
-    }
-
-    // Also add on Enter key
-    const nameInput = $('#packing-item-name');
-    if (nameInput) {
-        nameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const addRowBtn = $('#packing-add-row');
-                if (addRowBtn) addRowBtn.click();
-            }
+            packingBatchItems.push({ item: '', category: '' });
+            renderPackingBatchInputs();
         });
     }
 
@@ -1536,15 +1506,17 @@ function initPackingList() {
         saveBtn.addEventListener('click', async () => {
             if (saving) return;
 
-            // Include current input if not empty
-            const name = $('#packing-item-name').value.trim();
-            const category = $('#packing-item-category').value.trim();
-            if (name) {
-                packingBatchItems.push({ item: name, category });
-            }
+            // Collect all filled inputs
+            const inputs = $$('#packing-batch-list .batch-input-row');
+            const items = [];
+            inputs.forEach(row => {
+                const name = row.querySelector('.batch-name').value.trim();
+                const cat = row.querySelector('.batch-cat').value.trim();
+                if (name) items.push({ item: name, category: cat });
+            });
 
-            if (packingBatchItems.length === 0) {
-                alert('請至少新增一個物品');
+            if (items.length === 0) {
+                alert('請至少填寫一個物品');
                 return;
             }
 
@@ -1552,7 +1524,7 @@ function initPackingList() {
             saveBtn.disabled = true;
             saveBtn.textContent = '送出中...';
 
-            await batchSavePackingItems(packingBatchItems);
+            await batchSavePackingItems(items);
 
             $('#packing-form').style.display = 'none';
             packingBatchItems = [];
@@ -1563,15 +1535,23 @@ function initPackingList() {
     }
 }
 
-function renderPackingBatch() {
+function renderPackingBatchInputs() {
     const container = $('#packing-batch-list');
     if (!container) return;
     container.innerHTML = packingBatchItems.map((item, idx) => `
-        <div class="packing-batch-item">
-            <span>${item.item}${item.category ? ` (${item.category})` : ''}</span>
-            <button onclick="removePackingBatchItem(${idx})">✕</button>
+        <div class="batch-input-row form-row" style="margin-bottom:8px;">
+            <div class="form-group" style="flex:2;">
+                <input type="text" class="batch-name" placeholder="物品名稱" value="${item.item || ''}">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <input type="text" class="batch-cat" placeholder="分類" value="${item.category || ''}">
+            </div>
+            <button class="tool-btn-sm" onclick="removePackingBatchItem(${idx})" style="flex-shrink:0;height:40px;">✕</button>
         </div>
     `).join('');
+    // Focus the last input
+    const lastInput = container.querySelector('.batch-input-row:last-child .batch-name');
+    if (lastInput) lastInput.focus();
 }
 
 function removePackingBatchItem(idx) {
@@ -1636,36 +1616,9 @@ function initShoppingList() {
     const addBtn = $('#add-shopping-btn');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
-            shoppingBatchItems = [];
-            renderShoppingBatch();
             $('#shopping-form').style.display = 'block';
-            $('#shopping-item-name').value = '';
-            $('#shopping-item-category').value = '';
-            $('#shopping-item-name').focus();
-        });
-    }
-
-    const addRowBtn = $('#shopping-add-row');
-    if (addRowBtn) {
-        addRowBtn.addEventListener('click', () => {
-            const name = $('#shopping-item-name').value.trim();
-            const category = $('#shopping-item-category').value.trim();
-            if (!name) return;
-            shoppingBatchItems.push({ item: name, category });
-            renderShoppingBatch();
-            $('#shopping-item-name').value = '';
-            $('#shopping-item-name').focus();
-        });
-    }
-
-    const nameInput = $('#shopping-item-name');
-    if (nameInput) {
-        nameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const btn = $('#shopping-add-row');
-                if (btn) btn.click();
-            }
+            shoppingBatchItems.push({ item: '', category: '' });
+            renderShoppingBatchInputs();
         });
     }
 
@@ -1674,12 +1627,17 @@ function initShoppingList() {
         let saving = false;
         saveBtn.addEventListener('click', async () => {
             if (saving) return;
-            const name = $('#shopping-item-name').value.trim();
-            const category = $('#shopping-item-category').value.trim();
-            if (name) shoppingBatchItems.push({ item: name, category });
 
-            if (shoppingBatchItems.length === 0) {
-                alert('請至少新增一個物品');
+            const inputs = $$('#shopping-batch-list .batch-input-row');
+            const items = [];
+            inputs.forEach(row => {
+                const name = row.querySelector('.batch-name').value.trim();
+                const cat = row.querySelector('.batch-cat').value.trim();
+                if (name) items.push({ item: name, category: cat });
+            });
+
+            if (items.length === 0) {
+                alert('請至少填寫一個物品');
                 return;
             }
 
@@ -1687,7 +1645,7 @@ function initShoppingList() {
             saveBtn.disabled = true;
             saveBtn.textContent = '送出中...';
 
-            await batchSaveShoppingItems(shoppingBatchItems);
+            await batchSaveShoppingItems(items);
 
             $('#shopping-form').style.display = 'none';
             shoppingBatchItems = [];
@@ -1698,15 +1656,22 @@ function initShoppingList() {
     }
 }
 
-function renderShoppingBatch() {
+function renderShoppingBatchInputs() {
     const container = $('#shopping-batch-list');
     if (!container) return;
     container.innerHTML = shoppingBatchItems.map((item, idx) => `
-        <div class="packing-batch-item">
-            <span>${item.item}${item.category ? ` (${item.category})` : ''}</span>
-            <button onclick="removeShoppingBatchItem(${idx})">✕</button>
+        <div class="batch-input-row form-row" style="margin-bottom:8px;">
+            <div class="form-group" style="flex:2;">
+                <input type="text" class="batch-name" placeholder="物品名稱" value="${item.item || ''}">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <input type="text" class="batch-cat" placeholder="分類" value="${item.category || ''}">
+            </div>
+            <button class="tool-btn-sm" onclick="removeShoppingBatchItem(${idx})" style="flex-shrink:0;height:40px;">✕</button>
         </div>
     `).join('');
+    const lastInput = container.querySelector('.batch-input-row:last-child .batch-name');
+    if (lastInput) lastInput.focus();
 }
 
 function removeShoppingBatchItem(idx) {
@@ -2772,8 +2737,9 @@ function initScheduleManage() {
 function updateSchedDateDisplay() {
     const picker = $('#sched-date-picker');
     const label = $('#sched-selected-date');
+    const dateStr = `${schedManageDate.getFullYear()}-${String(schedManageDate.getMonth()+1).padStart(2,'0')}-${String(schedManageDate.getDate()).padStart(2,'0')}`;
     if (picker) {
-        picker.value = schedManageDate.toISOString().split('T')[0];
+        picker.value = dateStr;
     }
     if (label) {
         label.textContent = schedManageDate.toLocaleDateString('zh-TW', {
@@ -2815,7 +2781,7 @@ function showScheduleForm(item) {
     $('#schedule-form').style.display = 'block';
     $('#schedule-form-title').textContent = item ? '編輯行程' : '新增行程';
 
-    const dateStr = schedManageDate.toISOString().split('T')[0];
+    const dateStr = `${schedManageDate.getFullYear()}-${String(schedManageDate.getMonth()+1).padStart(2,'0')}-${String(schedManageDate.getDate()).padStart(2,'0')}`;
     $('#sched-date').value = item ? toInputDate(item.date.replace(/\//g, '-')) : dateStr;
     $('#sched-start').value = item ? item.startTime : '';
     $('#sched-end').value = item ? item.endTime : '';

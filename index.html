@@ -166,6 +166,11 @@
             <!-- More Tab (選單列表) -->
             <section id="tab-more" class="tab-content">
                 <div class="more-menu">
+                    <div class="more-menu-item" data-page="trip-dates">
+                        <span class="more-icon">✈️</span>
+                        <span class="more-label">旅程日期</span>
+                        <span class="more-arrow">›</span>
+                    </div>
                     <div class="more-menu-item" data-page="schedule-manage">
                         <span class="more-icon">📝</span>
                         <span class="more-label">行程管理</span>
@@ -176,24 +181,19 @@
                         <span class="more-label">匯率快算</span>
                         <span class="more-arrow">›</span>
                     </div>
-                    <div class="more-menu-item" data-page="packing">
-                        <span class="more-icon">🧳</span>
-                        <span class="more-label">行李清單</span>
-                        <span class="more-arrow">›</span>
-                    </div>
                     <div class="more-menu-item" data-page="shopping">
                         <span class="more-icon">🛍️</span>
                         <span class="more-label">購物清單</span>
                         <span class="more-arrow">›</span>
                     </div>
+                    <div class="more-menu-item" data-page="packing">
+                        <span class="more-icon">🧳</span>
+                        <span class="more-label">行李清單</span>
+                        <span class="more-arrow">›</span>
+                    </div>
                     <div class="more-menu-item" data-page="emergency">
                         <span class="more-icon">🆘</span>
                         <span class="more-label">緊急資訊</span>
-                        <span class="more-arrow">›</span>
-                    </div>
-                    <div class="more-menu-item" data-page="trip-dates">
-                        <span class="more-icon">✈️</span>
-                        <span class="more-label">旅程日期</span>
                         <span class="more-arrow">›</span>
                     </div>
                     <div class="more-menu-item" data-page="settings">
@@ -202,7 +202,7 @@
                         <span class="more-arrow">›</span>
                     </div>
                 </div>
-                <p class="hint" style="text-align:center;margin-top:16px;">版本 v2-43</p>
+                <p class="hint" style="text-align:center;margin-top:16px;">版本 v2-44</p>
 
                 <!-- Sub-pages (hidden by default) -->
                 <div id="more-subpage" class="more-subpage" style="display:none;">
@@ -279,19 +279,10 @@
                     <div class="progress-fill" id="packing-progress-bar"></div>
                 </div>
             </div>
-            <button id="sync-packing-checks" class="tool-btn-sm" style="width:100%;margin-top:8px;">🔄 同步勾選狀態</button>
+            <button id="sync-packing-checks" class="action-btn" style="width:100%;margin-top:8px;">🔄 儲存勾選狀態</button>
             <button id="add-packing-btn" class="action-btn" style="width:100%;margin-top:12px;">＋ 新增物品</button>
             <div id="packing-form" class="schedule-form" style="display:none;margin-top:12px;">
                 <div id="packing-batch-list" class="packing-batch-list"></div>
-                <div class="form-row" style="margin-top:8px;">
-                    <div class="form-group" style="flex:2;">
-                        <input type="text" id="packing-item-name" placeholder="物品名稱">
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <input type="text" id="packing-item-category" placeholder="分類">
-                    </div>
-                    <button id="packing-add-row" class="tool-btn-sm" style="flex-shrink:0;height:40px;">＋</button>
-                </div>
                 <div class="form-actions">
                     <button id="packing-save" class="tool-btn" style="width:100%;">全部送出</button>
                 </div>
@@ -311,19 +302,10 @@
                     <div class="progress-fill" id="shopping-progress-bar"></div>
                 </div>
             </div>
-            <button id="sync-shopping-checks" class="tool-btn-sm" style="width:100%;margin-top:8px;">🔄 同步勾選狀態</button>
+            <button id="sync-shopping-checks" class="action-btn" style="width:100%;margin-top:8px;">🔄 儲存勾選狀態</button>
             <button id="add-shopping-btn" class="action-btn" style="width:100%;margin-top:12px;">＋ 新增物品</button>
             <div id="shopping-form" class="schedule-form" style="display:none;margin-top:12px;">
                 <div id="shopping-batch-list" class="packing-batch-list"></div>
-                <div class="form-row" style="margin-top:8px;">
-                    <div class="form-group" style="flex:2;">
-                        <input type="text" id="shopping-item-name" placeholder="物品名稱">
-                    </div>
-                    <div class="form-group" style="flex:1;">
-                        <input type="text" id="shopping-item-category" placeholder="分類">
-                    </div>
-                    <button id="shopping-add-row" class="tool-btn-sm" style="flex-shrink:0;height:40px;">＋</button>
-                </div>
                 <div class="form-actions">
                     <button id="shopping-save" class="tool-btn" style="width:100%;">全部送出</button>
                 </div>

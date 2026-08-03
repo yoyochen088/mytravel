@@ -1480,59 +1480,120 @@ function initEmergency() {
 let packingItems = [];
 let editingPackingIndex = null;
 
+let packingBatchItems = []; // Temp batch for multiple add
+
 function initPackingList() {
     loadPackingList();
 
-    // Add button
+    // Add button - show form
     const addBtn = $('#add-packing-btn');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
             editingPackingIndex = null;
-            showPackingForm(null);
+            packingBatchItems = [];
+            renderPackingBatch();
+            $('#packing-form').style.display = 'block';
+            $('#packing-item-name').value = '';
+            $('#packing-item-category').value = '';
+            $('#packing-item-name').focus();
         });
     }
 
-    // Cancel
-    const cancelBtn = $('#packing-cancel');
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            $('#packing-form').style.display = 'none';
+    // Add row to batch
+    const addRowBtn = $('#packing-add-row');
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', () => {
+            const name = $('#packing-item-name').value.trim();
+            const category = $('#packing-item-category').value.trim();
+            if (!name) return;
+            packingBatchItems.push({ item: name, category });
+            renderPackingBatch();
+            $('#packing-item-name').value = '';
+            $('#packing-item-name').focus();
         });
     }
 
-    // Save
+    // Also add on Enter key
+    const nameInput = $('#packing-item-name');
+    if (nameInput) {
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const addRowBtn = $('#packing-add-row');
+                if (addRowBtn) addRowBtn.click();
+            }
+        });
+    }
+
+    // Save all
     const saveBtn = $('#packing-save');
     if (saveBtn) {
         let saving = false;
         saveBtn.addEventListener('click', async () => {
             if (saving) return;
-            saving = true;
-            saveBtn.disabled = true;
 
-            const item = {
-                item: $('#packing-item-name').value.trim(),
-                category: $('#packing-item-category').value.trim()
-            };
+            // Include current input if not empty
+            const name = $('#packing-item-name').value.trim();
+            const category = $('#packing-item-category').value.trim();
+            if (name) {
+                packingBatchItems.push({ item: name, category });
+            }
 
-            if (!item.item) {
-                alert('請填寫物品名稱');
-                saving = false;
-                saveBtn.disabled = false;
+            if (packingBatchItems.length === 0) {
+                alert('請至少新增一個物品');
                 return;
             }
 
-            await savePackingItem(editingPackingIndex !== null ? 'update' : 'add', item, editingPackingIndex);
+            saving = true;
+            saveBtn.disabled = true;
+            saveBtn.textContent = '送出中...';
+
+            await batchSavePackingItems(packingBatchItems);
+
             $('#packing-form').style.display = 'none';
+            packingBatchItems = [];
             saving = false;
             saveBtn.disabled = false;
+            saveBtn.textContent = '全部送出';
         });
     }
 }
 
-function showPackingForm(item) {
-    $('#packing-form').style.display = 'block';
-    $('#packing-item-name').value = item ? item.item : '';
-    $('#packing-item-category').value = item ? item.category : '';
+function renderPackingBatch() {
+    const container = $('#packing-batch-list');
+    if (!container) return;
+    container.innerHTML = packingBatchItems.map((item, idx) => `
+        <div class="packing-batch-item">
+            <span>${item.item}${item.category ? ` (${item.category})` : ''}</span>
+            <button onclick="removePackingBatchItem(${idx})">✕</button>
+        </div>
+    `).join('');
+}
+
+function removePackingBatchItem(idx) {
+    packingBatchItems.splice(idx, 1);
+    renderPackingBatch();
+}
+
+async function batchSavePackingItems(items) {
+    const sheetId = window.SHEET_ID;
+
+    // Optimistic update
+    items.forEach(item => {
+        packingItems.push({ id: packingItems.length, item: item.item, category: item.category, _pending: true });
+    });
+    renderPackingList();
+
+    // Background batch write
+    const payload = {
+        action: 'batchAddPackingItems',
+        sheetId,
+        user: currentUser,
+        password: getUserPassword(),
+        items: items
+    };
+
+    queueServerWrite(payload, 'add');
 }
 
 async function loadPackingList() {

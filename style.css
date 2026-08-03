@@ -1346,6 +1346,34 @@ body {
     flex-wrap: wrap;
 }
 
+.packing-batch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.packing-batch-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: var(--primary-light);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.packing-batch-item span {
+    flex: 1;
+}
+
+.packing-batch-item button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #d93025;
+}
+
 .packing-item:active {
     background: var(--primary-light);
 }

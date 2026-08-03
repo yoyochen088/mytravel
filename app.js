@@ -1172,6 +1172,11 @@ function registerServiceWorker() {
                 console.log('SW registered:', reg.scope);
             })
             .catch(err => console.log('SW registration failed:', err));
+
+        // Auto-reload when new SW takes control
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
     }
 }
 

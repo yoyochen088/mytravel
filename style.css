@@ -1230,6 +1230,11 @@ body {
     color: var(--primary);
 }
 
+.sched-action-btn.delete:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 .sched-action-btn.delete {
     background: #fce8e6;
     color: #d93025;
@@ -1269,7 +1274,7 @@ body {
 
 .form-group input[type="date"],
 .form-group input[type="time"] {
-    min-height: 44px;
+    padding: 8px 10px;
 }
 
 .form-group select {

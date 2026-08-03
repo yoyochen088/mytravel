@@ -399,18 +399,24 @@ async function silentLoadData() {
         if (!data.error) {
             localStorage.setItem('cachedAllData', JSON.stringify(data));
             
-            // Preserve pending items that aren't in the API response yet
+            // Preserve pending items
             const pendingSchedule = scheduleData.filter(item => item._pending);
+            const pendingPacking = packingItems.filter(item => item._pending);
             
             applyAllData(data);
             
-            // If there are still pending items not reflected in API, re-add them
+            // Re-add pending items if not yet reflected in API
             if (pendingSchedule.length > 0) {
-                const newPlaces = scheduleData.map(s => s.place);
                 pendingSchedule.forEach(p => {
-                    if (!newPlaces.includes(p.place)) {
-                        scheduleData.push(p);
-                    }
+                    const exists = scheduleData.some(s => s.place === p.place && s.date === p.date && s.startTime === p.startTime);
+                    if (!exists) scheduleData.push(p);
+                    else p._pending = false; // Found in API, no longer pending
+                });
+            }
+            if (pendingPacking.length > 0) {
+                pendingPacking.forEach(p => {
+                    const exists = packingItems.some(s => s.item === p.item);
+                    if (!exists) packingItems.push(p);
                 });
             }
             
@@ -1157,23 +1163,8 @@ function registerServiceWorker() {
         navigator.serviceWorker.register('sw.js')
             .then(reg => {
                 console.log('SW registered:', reg.scope);
-                // Check for updates and auto-reload
-                reg.addEventListener('updatefound', () => {
-                    const newWorker = reg.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
-                            // New SW activated, reload to get new content
-                            window.location.reload();
-                        }
-                    });
-                });
             })
             .catch(err => console.log('SW registration failed:', err));
-
-        // Also detect controller change (when skipWaiting + claim takes effect)
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            window.location.reload();
-        });
     }
 }
 
@@ -2514,7 +2505,10 @@ function initScheduleManage() {
     // Save
     let saving = false;
     $('#sched-save').addEventListener('click', async () => {
-        if (saving || _isWriting) return;
+        if (saving || _isWriting) {
+            if (_isWriting) alert('⏳ 請等待上一筆同步完成');
+            return;
+        }
         saving = true;
         $('#sched-save').disabled = true;
         $('#sched-save').textContent = '儲存中...';
@@ -2613,6 +2607,10 @@ function editScheduleItem(idx) {
 }
 
 async function deleteScheduleItemConfirm(idx) {
+    if (_isWriting) {
+        alert('⏳ 請等待上一筆同步完成');
+        return;
+    }
     const item = scheduleData[idx];
     if (!confirm(`確定刪除「${item.place}」？`)) return;
 
@@ -2669,8 +2667,6 @@ let _isWriting = false;
 
 function queueServerWrite(payload, action) {
     _isWriting = true;
-    // Disable delete buttons while writing to prevent row conflicts
-    $$('.sched-action-btn.delete').forEach(btn => btn.disabled = true);
 
     _writeQueue = _writeQueue.then(() => {
         return fetch(CONFIG_SCRIPT_URL, {
@@ -2701,8 +2697,6 @@ function queueServerWrite(payload, action) {
             alert('⚠️ 網路異常，資料已暫存本地');
         }).finally(() => {
             _isWriting = false;
-            // Re-enable delete buttons
-            $$('.sched-action-btn.delete').forEach(btn => btn.disabled = false);
         });
     });
 }

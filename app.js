@@ -2453,7 +2453,7 @@ function initScheduleManage() {
     // Save
     let saving = false;
     $('#sched-save').addEventListener('click', async () => {
-        if (saving) return;
+        if (saving || _isWriting) return;
         saving = true;
         $('#sched-save').disabled = true;
         $('#sched-save').textContent = '儲存中...';
@@ -2604,8 +2604,13 @@ async function saveScheduleItem(action, item, idx) {
 
 // Ensure server writes execute one at a time (especially for deletes)
 let _writeQueue = Promise.resolve();
+let _isWriting = false;
 
 function queueServerWrite(payload, action) {
+    _isWriting = true;
+    // Disable delete buttons while writing to prevent row conflicts
+    $$('.sched-action-btn.delete').forEach(btn => btn.disabled = true);
+
     _writeQueue = _writeQueue.then(() => {
         return fetch(CONFIG_SCRIPT_URL, {
             method: 'POST',
@@ -2633,6 +2638,10 @@ function queueServerWrite(payload, action) {
             addToSyncQueue(payload);
             showSyncStatus();
             alert('⚠️ 網路異常，資料已暫存本地');
+        }).finally(() => {
+            _isWriting = false;
+            // Re-enable delete buttons
+            $$('.sched-action-btn.delete').forEach(btn => btn.disabled = false);
         });
     });
 }

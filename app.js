@@ -97,6 +97,10 @@ function initSubpage(page) {
             initPackingList();
             renderPackingList();
             break;
+        case 'shopping':
+            initShoppingList();
+            renderShoppingList();
+            break;
         case 'emergency':
             initEmergencyFromSegments();
             break;
@@ -444,6 +448,9 @@ function applyAllData(data) {
     }
     if (data.segments) {
         segments = mapApiData(data.segments, mapSegmentItem);
+    }
+    if (data.shopping) {
+        shoppingItems = mapApiData(data.shopping, mapPackingItem);
     }
 
     updateNowTab();
@@ -1475,6 +1482,7 @@ let packingBatchItems = []; // Temp batch for multiple add
 
 function initPackingList() {
     loadPackingList();
+    initSyncPackingChecks();
 
     // Add button - show form
     const addBtn = $('#add-packing-btn');
@@ -1585,6 +1593,216 @@ async function batchSavePackingItems(items) {
     };
 
     queueServerWrite(payload, 'add');
+}
+
+function initSyncPackingChecks() {
+    const btn = $('#sync-packing-checks');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = '同步中...';
+            const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
+            const payload = {
+                action: 'syncPackingChecks',
+                sheetId: window.SHEET_ID,
+                user: currentUser,
+                password: getUserPassword(),
+                checkedIndexes: checked
+            };
+            queueServerWrite(payload, 'sync');
+            btn.textContent = '✅ 已同步';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = '🔄 同步勾選狀態';
+            }, 2000);
+        });
+    }
+}
+
+// ==================== 購物清單 ====================
+
+let shoppingItems = [];
+let shoppingBatchItems = [];
+
+function initShoppingList() {
+    loadShoppingList();
+    initSyncShoppingChecks();
+
+    const addBtn = $('#add-shopping-btn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            shoppingBatchItems = [];
+            renderShoppingBatch();
+            $('#shopping-form').style.display = 'block';
+            $('#shopping-item-name').value = '';
+            $('#shopping-item-category').value = '';
+            $('#shopping-item-name').focus();
+        });
+    }
+
+    const addRowBtn = $('#shopping-add-row');
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', () => {
+            const name = $('#shopping-item-name').value.trim();
+            const category = $('#shopping-item-category').value.trim();
+            if (!name) return;
+            shoppingBatchItems.push({ item: name, category });
+            renderShoppingBatch();
+            $('#shopping-item-name').value = '';
+            $('#shopping-item-name').focus();
+        });
+    }
+
+    const nameInput = $('#shopping-item-name');
+    if (nameInput) {
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const btn = $('#shopping-add-row');
+                if (btn) btn.click();
+            }
+        });
+    }
+
+    const saveBtn = $('#shopping-save');
+    if (saveBtn) {
+        let saving = false;
+        saveBtn.addEventListener('click', async () => {
+            if (saving) return;
+            const name = $('#shopping-item-name').value.trim();
+            const category = $('#shopping-item-category').value.trim();
+            if (name) shoppingBatchItems.push({ item: name, category });
+
+            if (shoppingBatchItems.length === 0) {
+                alert('請至少新增一個物品');
+                return;
+            }
+
+            saving = true;
+            saveBtn.disabled = true;
+            saveBtn.textContent = '送出中...';
+
+            await batchSaveShoppingItems(shoppingBatchItems);
+
+            $('#shopping-form').style.display = 'none';
+            shoppingBatchItems = [];
+            saving = false;
+            saveBtn.disabled = false;
+            saveBtn.textContent = '全部送出';
+        });
+    }
+}
+
+function renderShoppingBatch() {
+    const container = $('#shopping-batch-list');
+    if (!container) return;
+    container.innerHTML = shoppingBatchItems.map((item, idx) => `
+        <div class="packing-batch-item">
+            <span>${item.item}${item.category ? ` (${item.category})` : ''}</span>
+            <button onclick="removeShoppingBatchItem(${idx})">✕</button>
+        </div>
+    `).join('');
+}
+
+function removeShoppingBatchItem(idx) {
+    shoppingBatchItems.splice(idx, 1);
+    renderShoppingBatch();
+}
+
+function loadShoppingList() {
+    const container = $('#shopping-list');
+    if (!container) return;
+    if (shoppingItems.length === 0) {
+        container.innerHTML = '<p class="hint">購物清單是空的</p>';
+        return;
+    }
+    renderShoppingList();
+}
+
+function renderShoppingList() {
+    const container = $('#shopping-list');
+    if (!container) return;
+    const checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
+
+    if (shoppingItems.length === 0) {
+        container.innerHTML = '<p class="hint">購物清單是空的</p>';
+        updateShoppingProgress(0, 0);
+        return;
+    }
+
+    container.innerHTML = shoppingItems.map((item, idx) => {
+        const isChecked = checked.includes(idx);
+        return `
+            <div class="packing-item ${isChecked ? 'checked' : ''}" onclick="toggleShopping(${idx})">
+                <div class="check">${isChecked ? '✓' : ''}</div>
+                <span>${item.item}</span>
+                ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    updateShoppingProgress(checked.filter(id => id < shoppingItems.length).length, shoppingItems.length);
+}
+
+function toggleShopping(id) {
+    let checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
+    if (checked.includes(id)) {
+        checked = checked.filter(i => i !== id);
+    } else {
+        checked.push(id);
+    }
+    localStorage.setItem('shoppingChecked', JSON.stringify(checked));
+    renderShoppingList();
+}
+
+function updateShoppingProgress(done, total) {
+    const el = $('#shopping-progress-text');
+    if (!el) return;
+    el.textContent = `${done}/${total}`;
+    const pct = total > 0 ? (done / total * 100) : 0;
+    const bar = $('#shopping-progress-bar');
+    if (bar) bar.style.width = `${pct}%`;
+}
+
+async function batchSaveShoppingItems(items) {
+    const sheetId = window.SHEET_ID;
+    items.forEach(item => {
+        shoppingItems.push({ id: shoppingItems.length, item: item.item, category: item.category, _pending: true });
+    });
+    renderShoppingList();
+
+    const payload = {
+        action: 'batchAddShoppingItems',
+        sheetId,
+        user: currentUser,
+        password: getUserPassword(),
+        items: items
+    };
+    queueServerWrite(payload, 'add');
+}
+
+function initSyncShoppingChecks() {
+    const btn = $('#sync-shopping-checks');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = '同步中...';
+            const checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
+            const payload = {
+                action: 'syncShoppingChecks',
+                sheetId: window.SHEET_ID,
+                user: currentUser,
+                password: getUserPassword(),
+                checkedIndexes: checked
+            };
+            queueServerWrite(payload, 'sync');
+            btn.textContent = '✅ 已同步';
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.textContent = '🔄 同步勾選狀態';
+            }, 2000);
+        });
+    }
 }
 
 async function loadPackingList() {

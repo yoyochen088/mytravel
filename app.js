@@ -98,11 +98,28 @@ function initSubpage(page) {
             renderPackingList();
             break;
         case 'emergency':
-            initEmergency();
+            initEmergencyFromSegments();
             break;
         case 'trip-dates':
             initCountdown();
-            loadTripWeather();
+            // Only load segments if not already loaded
+            if (segments.length === 0) {
+                loadSegments().then(() => {
+                    initSegments();
+                    if (segments.length > 0) {
+                        loadTripWeatherBySegments();
+                    } else {
+                        loadTripWeather();
+                    }
+                });
+            } else {
+                initSegments();
+                if (segments.length > 0) {
+                    loadTripWeatherBySegments();
+                } else {
+                    loadTripWeather();
+                }
+            }
             break;
         case 'settings':
             initSettingsPage();
@@ -148,6 +165,8 @@ function updateClock() {
 }
 
 // --- Location ---
+let currentLocationName = '';
+
 function initLocation() {
     if ('geolocation' in navigator) {
         navigator.geolocation.watchPosition(
@@ -156,7 +175,10 @@ function initLocation() {
                     lat: pos.coords.latitude,
                     lng: pos.coords.longitude
                 };
-                $('#current-location').textContent = `📍 ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+                // Only reverse geocode once (or when refreshed)
+                if (!currentLocationName) {
+                    reverseGeocode(currentPosition.lat, currentPosition.lng);
+                }
             },
             (err) => {
                 $('#current-location').textContent = '📍 無法取得位置（請開啟定位權限）';
@@ -166,25 +188,53 @@ function initLocation() {
     }
 }
 
-// --- Settings (loaded from Apps Script) ---
-const CONFIG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgG_zUs5_7XSt2mgk8GbKCk3UIZ89WKiuR4mOEcCKctiLOV88YD7-8Qo6-4dORGGV9/exec'; // ← 部署後貼上
+async function reverseGeocode(lat, lng) {
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=zh`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const city = data.address.city || data.address.town || data.address.county || '';
+        const country = data.address.country || '';
+        if (city || country) {
+            currentLocationName = country ? `${city}, ${country}` : city;
+            $('#current-location').textContent = `📍 ${currentLocationName}`;
+        } else {
+            $('#current-location').textContent = '📍 目前位置已取得';
+        }
+    } catch (e) {
+        $('#current-location').textContent = '📍 目前位置已取得';
+    }
+}
 
-let currentUser = null;
+// --- Settings (loaded from Apps Script) ---
+const CONFIG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQcoVLDmpAtDc-M8WWac5zMgrNgbOO_Aoupthms1nCfFvhKjIP4AKO5F8EP2wT4AI-/exec';
+let currentUser = null;    
+
+function getUserPassword() {
+    return localStorage.getItem('userPassword_' + currentUser) || '';
+}
+
+function getAuthParams() {
+    return `&user=${encodeURIComponent(currentUser)}&password=${encodeURIComponent(getUserPassword())}`;
+}
 
 async function initUserSelect() {
     const saved = localStorage.getItem('currentUser');
     if (saved) {
         // Already has a saved user, try to load directly
-        try {
-            const config = JSON.parse(localStorage.getItem('userConfig_' + saved));
-            if (config) {
-                currentUser = saved;
-                applyUserConfig(config);
-                showMainApp();
-                loadData();
-                return;
-            }
-        } catch (e) {}
+        const savedPassword = localStorage.getItem('userPassword_' + saved);
+        if (savedPassword !== null) {
+            try {
+                const config = JSON.parse(localStorage.getItem('userConfig_' + saved));
+                if (config) {
+                    currentUser = saved;
+                    applyUserConfig(config);
+                    showMainApp();
+                    loadData();
+                    return;
+                }
+            } catch (e) {}
+        }
     }
     // Show user select screen
     await loadUserList();
@@ -211,13 +261,16 @@ async function loadUserList() {
 }
 
 async function selectUser(name) {
+    const password = prompt(`請輸入 ${name} 的密碼：`);
+    if (password === null) return; // User cancelled
+
     showLoading(true);
     try {
-        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(name));
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(name) + '&password=' + encodeURIComponent(password));
         const config = await res.json();
 
         if (config.error) {
-            alert('找不到該用戶設定：' + config.error);
+            alert('登入失敗：' + config.error);
             showLoading(false);
             return;
         }
@@ -225,17 +278,20 @@ async function selectUser(name) {
         // Save to localStorage
         currentUser = name;
         localStorage.setItem('currentUser', name);
+        localStorage.setItem('userPassword_' + name, password);
         localStorage.setItem('userConfig_' + name, JSON.stringify(config));
         localStorage.setItem('geminiApiKey', config.apiKey || '');
 
         applyUserConfig(config);
         showMainApp();
+        showLoading(false);
+        // Load data in background (won't block UI)
         loadData();
     } catch (err) {
         alert('讀取設定失敗：' + err.message);
         console.error(err);
+        showLoading(false);
     }
-    showLoading(false);
 }
 
 function applyUserConfig(config) {
@@ -301,42 +357,171 @@ async function loadData() {
     const sheetId = window.SHEET_ID;
     if (!sheetId) return;
 
-    showLoading(true);
+    // 1. 先從 localStorage 快取載入（秒開）
+    const cached = localStorage.getItem('cachedAllData');
+    if (cached) {
+        try {
+            const data = JSON.parse(cached);
+            applyAllData(data);
+        } catch (e) {}
+        // Don't show loading if we have cache
+    } else {
+        showLoading(true);
+    }
 
+    // 2. 背景從 API 更新最新資料
     try {
-        // Fetch all sheets in parallel
-        const [scheduleRes, randomRes, foodRes] = await Promise.allSettled([
-            fetch(getSheetCsvUrl(sheetId, window.SHEET_NAME_SCHEDULE)),
-            fetch(getSheetCsvUrl(sheetId, window.SHEET_NAME_RANDOM)),
-            fetch(getSheetCsvUrl(sheetId, window.SHEET_NAME_FOOD))
-        ]);
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getAllData' + getAuthParams());
+        const data = await res.json();
 
-        // Parse schedule
-        if (scheduleRes.status === 'fulfilled' && scheduleRes.value.ok) {
-            scheduleData = parseScheduleCSV(await scheduleRes.value.text());
+        if (data.error) {
+            console.error('getAllData error:', data.error);
+            if (!cached) showLoading(false);
+            return;
         }
 
-        // Parse random places
-        if (randomRes.status === 'fulfilled' && randomRes.value.ok) {
-            randomPlaces = parseRandomCSV(await randomRes.value.text());
-        }
-
-        // Parse food
-        if (foodRes.status === 'fulfilled' && foodRes.value.ok) {
-            foodList = parseFoodCSV(await foodRes.value.text());
-        }
-
-        updateNowTab();
-        updateTimeline();
-        updateRandomList();
-        updateFoodList();
-        loadPackingList();
+        // Save to cache
+        localStorage.setItem('cachedAllData', JSON.stringify(data));
+        applyAllData(data);
     } catch (err) {
         console.error('載入資料失敗:', err);
     }
 
     showLoading(false);
     updateCurrentWeather();
+}
+
+// Silent background refresh (no loading overlay)
+async function silentLoadData() {
+    try {
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getAllData' + getAuthParams());
+        const data = await res.json();
+        if (!data.error) {
+            localStorage.setItem('cachedAllData', JSON.stringify(data));
+            
+            // Preserve pending items that aren't in the API response yet
+            const pendingSchedule = scheduleData.filter(item => item._pending);
+            
+            applyAllData(data);
+            
+            // If there are still pending items not reflected in API, re-add them
+            if (pendingSchedule.length > 0) {
+                const newPlaces = scheduleData.map(s => s.place);
+                pendingSchedule.forEach(p => {
+                    if (!newPlaces.includes(p.place)) {
+                        scheduleData.push(p);
+                    }
+                });
+            }
+            
+            // Re-render schedule edit list if it's open
+            const schedList = $('#schedule-edit-list');
+            if (schedList) renderScheduleEditList();
+        }
+    } catch (e) {
+        console.log('背景更新失敗:', e);
+    }
+}
+
+function applyAllData(data) {
+    if (data.schedule) {
+        scheduleData = mapApiData(data.schedule, mapScheduleItem);
+    }
+    if (data.places) {
+        randomPlaces = mapApiData(data.places, mapRandomPlace);
+    }
+    if (data.food) {
+        foodList = mapApiData(data.food, mapFoodItem);
+    }
+    if (data.packing) {
+        packingItems = mapApiData(data.packing, mapPackingItem);
+    }
+    if (data.segments) {
+        segments = mapApiData(data.segments, mapSegmentItem);
+    }
+
+    updateNowTab();
+    updateTimeline();
+    updateRandomList();
+    updateFoodList();
+    renderPackingList();
+}
+
+// --- API Data Mapping ---
+function mapApiData(arr, mapFn) {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(mapFn).filter(Boolean);
+}
+
+function mapScheduleItem(row) {
+    return {
+        date: row['日期'] || row['date'] || '',
+        startTime: row['開始時間'] || row['startTime'] || '',
+        endTime: row['結束時間'] || row['endTime'] || '',
+        place: row['地點'] || row['place'] || '',
+        address: row['地址'] || row['address'] || '',
+        notes: row['備註'] || row['notes'] || '',
+        _uuid: row._uuid || '',
+        _rowIndex: row._rowIndex
+    };
+}
+
+function mapRandomPlace(row) {
+    return {
+        place: row['地點'] || row['place'] || '',
+        address: row['地址'] || row['address'] || '',
+        type: row['類型'] || row['type'] || '',
+        notes: row['備註'] || row['notes'] || '',
+        city: row['城市'] || row['city'] || '',
+        _uuid: row._uuid || '',
+        _rowIndex: row._rowIndex
+    };
+}
+
+function mapFoodItem(row) {
+    return {
+        name: row['店名'] || row['name'] || '',
+        hours: row['營業時間'] || row['hours'] || '',
+        address: row['地址'] || row['address'] || '',
+        type: row['類型'] || row['type'] || '',
+        price: row['價位'] || row['price'] || '',
+        rating: row['Google評分'] || row['評分'] || row['rating'] || '',
+        queue: row['是否排隊'] || row['是否需排隊'] || row['排隊'] || row['queue'] || '',
+        recommend: row['推薦餐點'] || row['推薦'] || row['recommend'] || '',
+        area: row['地區'] || row['區域'] || row['area'] || '',
+        notes: row['備註'] || row['notes'] || '',
+        city: row['城市'] || row['city'] || '',
+        _uuid: row._uuid || '',
+        _rowIndex: row._rowIndex
+    };
+}
+
+function mapPackingItem(row, idx) {
+    return {
+        id: idx,
+        item: row['物品'] || row['item'] || '',
+        category: row['分類'] || row['category'] || '',
+        _uuid: row._uuid || '',
+        _rowIndex: row._rowIndex
+    };
+}
+
+function mapSegmentItem(row, idx) {
+    return {
+        idx,
+        name: row['段落名'] || row['名稱'] || row['name'] || '',
+        country: row['國家'] || row['country'] || '',
+        city: row['城市'] || row['city'] || '',
+        lat: parseFloat(row['緯度'] || row['lat']) || 0,
+        lng: parseFloat(row['經度'] || row['lng']) || 0,
+        startDate: toInputDate(row['開始日'] || row['開始日期'] || row['startDate'] || ''),
+        endDate: toInputDate(row['結束日'] || row['結束日期'] || row['endDate'] || ''),
+        hotelName: row['住宿名稱'] || row['飯店名稱'] || row['hotelName'] || '',
+        hotelAddress: row['住宿地址'] || row['飯店地址'] || row['hotelAddress'] || '',
+        hotelPhone: row['住宿電話'] || row['飯店電話'] || row['hotelPhone'] || '',
+        _uuid: row._uuid || '',
+        _rowIndex: row._rowIndex
+    };
 }
 // --- CSV Parsing ---
 function parseCSVLine(line) {
@@ -365,6 +550,7 @@ function parseCSVLine(line) {
 }
 
 function parseScheduleCSV(csv) {
+    // DEPRECATED: kept as fallback, prefer mapApiData
     const lines = csv.split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
 
@@ -383,6 +569,7 @@ function parseScheduleCSV(csv) {
 }
 
 function parseRandomCSV(csv) {
+    // DEPRECATED: kept as fallback, prefer mapApiData
     const lines = csv.split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
 
@@ -392,12 +579,14 @@ function parseRandomCSV(csv) {
             place: cols[0] || '',
             address: cols[1] || '',
             type: cols[2] || '',
-            notes: cols[3] || ''
+            notes: cols[3] || '',
+            city: cols[4] || ''
         };
     }).filter(item => item.place);
 }
 
 function parseFoodCSV(csv) {
+    // DEPRECATED: kept as fallback, prefer mapApiData
     const lines = csv.split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
 
@@ -413,7 +602,8 @@ function parseFoodCSV(csv) {
             queue: cols[6] || '',
             recommend: cols[7] || '',
             area: cols[8] || '',
-            notes: cols[9] || ''
+            notes: cols[9] || '',
+            city: cols[10] || ''
         };
     }).filter(item => item.name);
 }
@@ -877,12 +1067,18 @@ function initButtons() {
 async function refreshAll() {
     if (!currentUser) return;
 
+    // Reset location name to re-query on refresh
+    currentLocationName = '';
+    if (currentPosition) {
+        reverseGeocode(currentPosition.lat, currentPosition.lng);
+    }
+
     // Process any pending sync queue items
     await processSyncQueue();
 
     try {
-        // Re-fetch user config from Apps Script
-        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(currentUser));
+        // Re-fetch user config from Apps Script (with password)
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getConfig&user=' + encodeURIComponent(currentUser) + '&password=' + encodeURIComponent(getUserPassword()));
         const config = await res.json();
         if (!config.error) {
             localStorage.setItem('userConfig_' + currentUser, JSON.stringify(config));
@@ -895,38 +1091,34 @@ async function refreshAll() {
         console.log('重新取得設定失敗:', e);
     }
 
-    // Reload sheet data (without showing loading overlay)
-    const sheetId = window.SHEET_ID;
-    if (!sheetId) return;
-
+    // Reload all data via getAllData
     try {
-        const scheduleUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_SCHEDULE);
-        const scheduleRes = await fetch(scheduleUrl);
-        if (scheduleRes.ok) {
-            scheduleData = parseScheduleCSV(await scheduleRes.text());
+        const res = await fetch(CONFIG_SCRIPT_URL + '?action=getAllData' + getAuthParams());
+        const data = await res.json();
+
+        if (!data.error) {
+            if (data.schedule) {
+                scheduleData = mapApiData(data.schedule, mapScheduleItem);
+            }
+            if (data.places) {
+                randomPlaces = mapApiData(data.places, mapRandomPlace);
+            }
+            if (data.food) {
+                foodList = mapApiData(data.food, mapFoodItem);
+            }
+            if (data.packing) {
+                packingItems = mapApiData(data.packing, mapPackingItem);
+            }
+            if (data.segments) {
+                segments = mapApiData(data.segments, mapSegmentItem);
+            }
         }
-
-        try {
-            const randomUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_RANDOM);
-            const randomRes = await fetch(randomUrl);
-            if (randomRes.ok) {
-                randomPlaces = parseRandomCSV(await randomRes.text());
-            }
-        } catch (e) {}
-
-        try {
-            const foodUrl = getSheetCsvUrl(sheetId, window.SHEET_NAME_FOOD);
-            const foodRes = await fetch(foodUrl);
-            if (foodRes.ok) {
-                foodList = parseFoodCSV(await foodRes.text());
-            }
-        } catch (e) {}
 
         updateNowTab();
         updateTimeline();
         updateRandomList();
         updateFoodList();
-        loadPackingList();
+        renderPackingList();
     } catch (err) {
         console.error('重新載入資料失敗:', err);
     }
@@ -1016,10 +1208,12 @@ function initPullToRefresh() {
         if (!pulling) return;
         pulling = false;
         if (indicator.classList.contains('visible')) {
-            indicator.classList.remove('visible');
-            showLoading(true);
-            await refreshAll();
-            showLoading(false);
+            indicator.querySelector('span').textContent = '🔄 更新中...';
+            // Don't show full-screen loading, just update in background
+            refreshAll().then(() => {
+                indicator.classList.remove('visible');
+                indicator.querySelector('span').textContent = '↓ 下拉更新';
+            });
         }
     });
 }
@@ -1085,7 +1279,11 @@ function initCountdown() {
         $('#save-trip-dates').disabled = false;
         $('#save-trip-dates').textContent = '修改';
         // Reload weather
-        loadTripWeather();
+        if (segments.length > 0) {
+            loadTripWeatherBySegments();
+        } else {
+            loadTripWeather();
+        }
     });
 }
 
@@ -1103,6 +1301,15 @@ function toInputDate(str) {
         return `${y}-${m}-${day}`;
     }
     return '';
+}
+
+// Format date for display (e.g. "2026-08-08" → "8/8")
+function formatSegDate(str) {
+    if (!str) return '';
+    const normalized = toInputDate(str);
+    if (!normalized) return str;
+    const parts = normalized.split('-');
+    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
 }
 
 function updateCountdown() {
@@ -1329,30 +1536,18 @@ function showPackingForm(item) {
 }
 
 async function loadPackingList() {
-    const sheetId = window.SHEET_ID;
+    // Data already loaded by loadData/getAllData, just render
     const container = $('#packing-list');
     if (!container) return;
-    if (!sheetId) {
-        container.innerHTML = '<p class="hint">未設定 Sheet</p>';
+    if (packingItems.length === 0) {
+        container.innerHTML = '<p class="hint">行李清單是空的</p>';
         return;
     }
-
-    try {
-        const url = getSheetCsvUrl(sheetId, '行李清單');
-        const res = await fetch(url);
-        if (!res.ok) {
-            container.innerHTML = '<p class="hint">未找到「行李清單」分頁</p>';
-            return;
-        }
-        const csv = await res.text();
-        packingItems = parsePackingCSV(csv);
-        renderPackingList();
-    } catch (e) {
-        container.innerHTML = '<p class="hint">無法載入行李清單</p>';
-    }
+    renderPackingList();
 }
 
 function parsePackingCSV(csv) {
+    // DEPRECATED: kept as fallback, prefer mapApiData
     const lines = csv.split('\n').filter(l => l.trim());
     if (lines.length < 2) return [];
 
@@ -1417,12 +1612,15 @@ async function deletePackingItemConfirm(id) {
 
 async function savePackingItem(action, item, idx) {
     const sheetId = window.SHEET_ID;
+    const uuid = (action !== 'add' && packingItems[idx]) ? (packingItems[idx]._uuid || '') : '';
 
     const payload = {
         action: action === 'add' ? 'addPackingItem' :
                 action === 'update' ? 'updatePackingItem' : 'deletePackingItem',
         sheetId: sheetId,
-        rowIndex: idx,
+        user: currentUser,
+        password: getUserPassword(),
+        uuid: uuid,
         item: item
     };
 
@@ -1666,21 +1864,552 @@ async function loadTripWeather() {
             alertEl.style.display = 'none';
         }
 
-        // Render list
-        container.innerHTML = tripDays.map(day => `
-            <div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}">
-                <span class="weather-date">${day.dayLabel}</span>
-                <span class="weather-icon">${day.emoji}</span>
-                <span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span>
-                <span class="weather-rain">降雨 ${day.rain}%</span>
-            </div>
-        `).join('');
+        // Render list (include days with no forecast)
+        const allTripDays = [];
+        const currentDate = new Date(startStr + 'T00:00:00');
+        const endDate = new Date(endStr + 'T00:00:00');
+
+        while (currentDate <= endDate) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const idx = dates.indexOf(dateStr);
+            if (idx !== -1) {
+                allTripDays.push({
+                    dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                    emoji: getWeatherEmoji(codes[idx]),
+                    maxTemp: Math.round(maxTemps[idx]),
+                    minTemp: Math.round(minTemps[idx]),
+                    rain: rainProbs[idx],
+                    available: true
+                });
+            } else {
+                allTripDays.push({
+                    dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                    available: false
+                });
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        container.innerHTML = allTripDays.map(day => {
+            if (!day.available) {
+                return `
+                    <div class="weather-day" style="opacity:0.5;">
+                        <span class="weather-date">${day.dayLabel}</span>
+                        <span class="weather-icon">⏳</span>
+                        <span class="weather-temp" style="flex:1;">尚無預報（超出預報範圍）</span>
+                    </div>
+                `;
+            }
+            return `
+                <div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}">
+                    <span class="weather-date">${day.dayLabel}</span>
+                    <span class="weather-icon">${day.emoji}</span>
+                    <span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span>
+                    <span class="weather-rain">降雨 ${day.rain}%</span>
+                </div>
+            `;
+        }).join('');
 
         section.style.display = 'block';
     } catch (e) {
         console.log('旅程天氣取得失敗:', e);
         section.style.display = 'block';
         container.innerHTML = '<p class="hint">天氣資料載入失敗</p>';
+    }
+}
+
+
+// ==================== 行程段落管理 ====================
+
+// 常見旅遊城市座標資料庫
+const CITY_DATABASE = {
+    '日本': {
+        '東京': { lat: 35.6762, lng: 139.6503 },
+        '大阪': { lat: 34.6937, lng: 135.5023 },
+        '京都': { lat: 35.0116, lng: 135.7681 },
+        '名古屋': { lat: 35.1815, lng: 136.9066 },
+        '福岡': { lat: 33.5904, lng: 130.4017 },
+        '札幌': { lat: 43.0618, lng: 141.3545 },
+        '沖繩': { lat: 26.3344, lng: 127.8056 },
+        '神戶': { lat: 34.6901, lng: 135.1956 },
+        '橫濱': { lat: 35.4437, lng: 139.6380 },
+        '奈良': { lat: 34.6851, lng: 135.8048 },
+        '廣島': { lat: 34.3853, lng: 132.4553 },
+        '仙台': { lat: 38.2682, lng: 140.8694 },
+        '金澤': { lat: 36.5613, lng: 136.6562 },
+        '熊本': { lat: 32.8032, lng: 130.7079 },
+        '長崎': { lat: 32.7503, lng: 129.8777 },
+    },
+    '韓國': {
+        '首爾': { lat: 37.5665, lng: 126.9780 },
+        '釜山': { lat: 35.1796, lng: 129.0756 },
+        '濟州': { lat: 33.4996, lng: 126.5312 },
+        '仁川': { lat: 37.4563, lng: 126.7052 },
+        '大邱': { lat: 35.8714, lng: 128.6014 },
+    },
+    '泰國': {
+        '曼谷': { lat: 13.7563, lng: 100.5018 },
+        '清邁': { lat: 18.7883, lng: 98.9853 },
+        '普吉島': { lat: 7.8804, lng: 98.3923 },
+        '芭達雅': { lat: 12.9236, lng: 100.8825 },
+    },
+    '越南': {
+        '河內': { lat: 21.0278, lng: 105.8342 },
+        '胡志明市': { lat: 10.8231, lng: 106.6297 },
+        '峴港': { lat: 16.0544, lng: 108.2022 },
+    },
+    '新加坡': {
+        '新加坡': { lat: 1.3521, lng: 103.8198 },
+    },
+    '馬來西亞': {
+        '吉隆坡': { lat: 3.1390, lng: 101.6869 },
+        '檳城': { lat: 5.4164, lng: 100.3327 },
+        '沙巴': { lat: 5.9804, lng: 116.0735 },
+    },
+    '香港': {
+        '香港': { lat: 22.3193, lng: 114.1694 },
+    },
+    '澳門': {
+        '澳門': { lat: 22.1987, lng: 113.5439 },
+    },
+    '美國': {
+        '紐約': { lat: 40.7128, lng: -74.0060 },
+        '洛杉磯': { lat: 34.0522, lng: -118.2437 },
+        '舊金山': { lat: 37.7749, lng: -122.4194 },
+        '拉斯維加斯': { lat: 36.1699, lng: -115.1398 },
+    },
+    '英國': {
+        '倫敦': { lat: 51.5074, lng: -0.1278 },
+    },
+    '法國': {
+        '巴黎': { lat: 48.8566, lng: 2.3522 },
+    },
+    '澳洲': {
+        '雪梨': { lat: -33.8688, lng: 151.2093 },
+        '墨爾本': { lat: -37.8136, lng: 144.9631 },
+    },
+};
+
+const COUNTRY_LIST = Object.keys(CITY_DATABASE);
+
+function getCitiesForCountry(country) {
+    return CITY_DATABASE[country] ? Object.keys(CITY_DATABASE[country]) : [];
+}
+
+function getCityCoords(country, city) {
+    if (CITY_DATABASE[country] && CITY_DATABASE[country][city]) {
+        return CITY_DATABASE[country][city];
+    }
+    return null;
+}
+
+// Geocoding fallback for custom cities (using Open-Meteo geocoding API - free, no key)
+async function geocodeCity(cityName) {
+    try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=zh`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+            return { lat: data.results[0].latitude, lng: data.results[0].longitude };
+        }
+    } catch (e) {
+        console.log('Geocoding failed:', e);
+    }
+    return null;
+}
+
+let segments = [];
+let editingSegmentIndex = null;
+
+async function loadSegments() {
+    // Data already loaded by loadData/getAllData
+    // This function is kept for backward compatibility but is now a no-op
+    // Segments are loaded via getAllData in loadData()
+}
+
+function parseSegmentsCSV(csv) {
+    // DEPRECATED: kept as fallback, prefer mapApiData
+    const lines = csv.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return [];
+    return lines.slice(1).map((line, idx) => {
+        const cols = parseCSVLine(line);
+        return {
+            idx, name: cols[0] || '', country: cols[1] || '', city: cols[2] || '',
+            lat: parseFloat(cols[3]) || 0, lng: parseFloat(cols[4]) || 0,
+            startDate: toInputDate(cols[5] || ''), endDate: toInputDate(cols[6] || ''),
+            hotelName: cols[7] || '', hotelAddress: cols[8] || '', hotelPhone: cols[9] || ''
+        };
+    }).filter(s => s.name);
+}
+
+function getCurrentSegment() {
+    if (segments.length === 0) return null;
+    const today = new Date().toISOString().split('T')[0];
+    return segments.find(s => today >= s.startDate && today <= s.endDate) || segments[0];
+}
+
+function initSegments() {
+    renderSegmentsList();
+    populateCountryDropdown();
+
+    // Country change → update city dropdown
+    $('#seg-country').addEventListener('change', () => {
+        const country = $('#seg-country').value;
+        populateCityDropdown(country);
+    });
+
+    // City change → show custom input if "other"
+    $('#seg-city').addEventListener('change', () => {
+        const city = $('#seg-city').value;
+        $('#seg-city-custom').style.display = city === '__custom__' ? 'block' : 'none';
+    });
+
+    $('#add-segment-btn').addEventListener('click', () => {
+        editingSegmentIndex = null;
+        showSegmentForm(null);
+    });
+
+    $('#seg-cancel').addEventListener('click', () => {
+        $('#segment-form').style.display = 'none';
+    });
+
+    let saving = false;
+    $('#seg-save').addEventListener('click', async () => {
+        if (saving) return;
+        saving = true;
+        $('#seg-save').disabled = true;
+        $('#seg-save').textContent = '儲存中...';
+
+        const country = $('#seg-country').value;
+        let city = $('#seg-city').value;
+        if (city === '__custom__') {
+            city = $('#seg-city-custom').value.trim();
+        }
+
+        // Get coordinates
+        let coords = getCityCoords(country, city);
+        if (!coords && city) {
+            // Try geocoding for custom city
+            coords = await geocodeCity(city);
+        }
+
+        const item = {
+            name: $('#seg-name').value.trim(),
+            country: country,
+            city: city,
+            lat: coords ? coords.lat : 0,
+            lng: coords ? coords.lng : 0,
+            startDate: $('#seg-start').value,
+            endDate: $('#seg-end').value,
+            hotelName: $('#seg-hotel-name').value.trim(),
+            hotelAddress: $('#seg-hotel-address').value.trim(),
+            hotelPhone: $('#seg-hotel-phone').value.trim()
+        };
+
+        if (!item.name || !item.city) {
+            alert('請至少填寫旅程名稱和城市');
+            saving = false;
+            $('#seg-save').disabled = false;
+            $('#seg-save').textContent = '儲存';
+            return;
+        }
+
+        await saveSegment(editingSegmentIndex !== null ? 'update' : 'add', item, editingSegmentIndex);
+        $('#segment-form').style.display = 'none';
+        saving = false;
+        $('#seg-save').disabled = false;
+        $('#seg-save').textContent = '儲存';
+    });
+}
+
+function populateCountryDropdown() {
+    const select = $('#seg-country');
+    if (!select) return;
+    select.innerHTML = '<option value="">選擇國家</option>' +
+        COUNTRY_LIST.map(c => `<option value="${c}">${c}</option>`).join('') +
+        '<option value="__custom__">其他（手動輸入）</option>';
+}
+
+function populateCityDropdown(country) {
+    const select = $('#seg-city');
+    const customInput = $('#seg-city-custom');
+    if (!select) return;
+
+    if (!country || country === '__custom__') {
+        select.innerHTML = '<option value="">請輸入城市</option><option value="__custom__">手動輸入</option>';
+        select.value = '__custom__';
+        customInput.style.display = 'block';
+        return;
+    }
+
+    const cities = getCitiesForCountry(country);
+    select.innerHTML = '<option value="">選擇城市</option>' +
+        cities.map(c => `<option value="${c}">${c}</option>`).join('') +
+        '<option value="__custom__">其他（手動輸入）</option>';
+    customInput.style.display = 'none';
+}
+
+function showSegmentForm(item) {
+    $('#segment-form').style.display = 'block';
+    $('#segment-form-title').textContent = item ? '編輯旅途' : '新增旅途';
+    $('#seg-name').value = item ? item.name : '';
+
+    // Set country dropdown
+    const countrySelect = $('#seg-country');
+    if (item && item.country) {
+        // Check if country is in our list
+        if (COUNTRY_LIST.includes(item.country)) {
+            countrySelect.value = item.country;
+        } else {
+            countrySelect.value = '__custom__';
+        }
+        populateCityDropdown(item.country);
+    } else {
+        countrySelect.value = '';
+        populateCityDropdown('');
+    }
+
+    // Set city dropdown
+    const citySelect = $('#seg-city');
+    const customInput = $('#seg-city-custom');
+    if (item && item.city) {
+        const cities = getCitiesForCountry(item.country);
+        if (cities.includes(item.city)) {
+            citySelect.value = item.city;
+            customInput.style.display = 'none';
+        } else {
+            citySelect.value = '__custom__';
+            customInput.style.display = 'block';
+            customInput.value = item.city;
+        }
+    } else {
+        customInput.style.display = 'none';
+    }
+
+    $('#seg-start').value = item ? toInputDate(item.startDate) : '';
+    $('#seg-end').value = item ? toInputDate(item.endDate) : '';
+    $('#seg-hotel-name').value = item ? item.hotelName : '';
+    $('#seg-hotel-address').value = item ? item.hotelAddress : '';
+    $('#seg-hotel-phone').value = item ? item.hotelPhone : '';
+}
+
+function renderSegmentsList() {
+    const container = $('#segments-list');
+    if (!container) return;
+
+    if (segments.length === 0) {
+        container.innerHTML = '<p class="hint">尚未設定旅途資訊，請新增以取得天氣和住宿資料</p>';
+        return;
+    }
+
+    container.innerHTML = segments.map((seg, idx) => `
+        <div class="segment-card">
+            <div class="segment-info">
+                <div class="segment-city">${seg.country ? seg.country + ' · ' : ''}${seg.city}</div>
+                <div class="segment-dates">${formatSegDate(seg.startDate)} ~ ${formatSegDate(seg.endDate)}</div>
+                ${seg.hotelName ? `<div class="segment-hotel">🏨 ${seg.hotelName}</div>` : ''}
+            </div>
+            <div class="sched-actions">
+                <button class="sched-action-btn edit" onclick="editSegment(${idx})">✏️</button>
+                <button class="sched-action-btn delete" onclick="deleteSegmentConfirm(${idx})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function editSegment(idx) {
+    editingSegmentIndex = idx;
+    showSegmentForm(segments[idx]);
+}
+
+async function deleteSegmentConfirm(idx) {
+    if (!confirm(`確定刪除「${segments[idx].name}」？`)) return;
+    await saveSegment('delete', null, idx);
+}
+
+async function saveSegment(action, item, idx) {
+    const sheetId = window.SHEET_ID;
+    const uuid = (action !== 'add' && segments[idx]) ? (segments[idx]._uuid || '') : '';
+    const payload = {
+        action: action === 'add' ? 'addSegment' : action === 'update' ? 'updateSegment' : 'deleteSegment',
+        sheetId,
+        user: currentUser,
+        password: getUserPassword(),
+        uuid: uuid,
+        item
+    };
+
+    try {
+        const res = await fetch(CONFIG_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        });
+
+        if (!res.ok && res.status !== 0) throw new Error(`HTTP ${res.status}`);
+
+        if (action === 'add') segments.push({ ...item, idx: segments.length });
+        else if (action === 'update') segments[idx] = { ...segments[idx], ...item };
+        else if (action === 'delete') segments.splice(idx, 1);
+
+        renderSegmentsList();
+        loadTripWeatherBySegments();
+        alert(action === 'delete' ? '✅ 已刪除' : '✅ 已儲存');
+    } catch (err) {
+        addToSyncQueue(payload);
+        if (action === 'add') segments.push({ ...item, idx: segments.length });
+        else if (action === 'update') segments[idx] = { ...segments[idx], ...item };
+        else if (action === 'delete') segments.splice(idx, 1);
+        renderSegmentsList();
+        alert('⚠️ 已暫存本地（網路恢復後自動同步）');
+    }
+}
+
+// Weather by segments
+async function loadTripWeatherBySegments() {
+    const section = $('#trip-weather-section');
+    const container = $('#trip-weather-list');
+    const alertEl = $('#weather-alert');
+    if (!section || !container) return;
+
+    if (segments.length === 0) {
+        // Fallback to old single-location weather
+        loadTripWeather();
+        return;
+    }
+
+    // Deduplicate segments by city+dates
+    const seen = new Set();
+    const uniqueSegments = segments.filter(seg => {
+        const key = `${seg.city}-${seg.startDate}-${seg.endDate}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    section.style.display = 'block';
+    container.innerHTML = '<p class="hint">載入天氣中...</p>';
+
+    const allDays = [];
+    const rainyDays = [];
+
+    for (const seg of uniqueSegments) {
+        if (!seg.startDate || !seg.endDate) continue;
+
+        // Add city header
+        allDays.push({ type: 'header', city: seg.city, startDate: seg.startDate, endDate: seg.endDate });
+
+        if (!seg.lat || !seg.lng) {
+            // No coordinates - show error for all days
+            const currentDate = new Date(seg.startDate + 'T00:00:00');
+            const endDate = new Date(seg.endDate + 'T00:00:00');
+            while (currentDate <= endDate) {
+                allDays.push({
+                    type: 'day',
+                    dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                    available: false, error: true, errorMsg: `無法查到「${seg.city}」的氣象`
+                });
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            continue;
+        }
+
+        try {
+            const data = await fetchWeather(seg.lat, seg.lng, 16);
+            const dates = data.daily.time;
+            const maxTemps = data.daily.temperature_2m_max;
+            const minTemps = data.daily.temperature_2m_min;
+            const rainProbs = data.daily.precipitation_probability_max;
+            const codes = data.daily.weather_code;
+
+            const currentDate = new Date(seg.startDate + 'T00:00:00');
+            const endDate = new Date(seg.endDate + 'T00:00:00');
+
+            while (currentDate <= endDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const idx = dates.indexOf(dateStr);
+                if (idx !== -1) {
+                    const rain = rainProbs[idx];
+                    const dayInfo = {
+                        type: 'day',
+                        dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                        emoji: getWeatherEmoji(codes[idx]),
+                        maxTemp: Math.round(maxTemps[idx]),
+                        minTemp: Math.round(minTemps[idx]),
+                        rain, city: seg.city
+                    };
+                    allDays.push(dayInfo);
+                    if (rain >= 50) rainyDays.push(dayInfo);
+                } else {
+                    allDays.push({
+                        type: 'day',
+                        dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
+                        available: false
+                    });
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        } catch (e) {
+            allDays.push({ type: 'day', dayLabel: '', available: false, error: true });
+        }
+    }
+
+    // Rain alert
+    if (rainyDays.length > 0) {
+        const rainyList = rainyDays.map(d => `${d.city} ${d.dayLabel}`).join('、');
+        alertEl.textContent = `☔ 提醒：${rainyList} 降雨機率高，記得帶傘！`;
+        alertEl.style.display = 'block';
+    } else {
+        alertEl.style.display = 'none';
+    }
+
+    // Render
+    container.innerHTML = allDays.map(day => {
+        if (day.type === 'header') {
+            return `<div class="weather-city-header">📍 ${day.city}（${formatSegDate(day.startDate)} ~ ${formatSegDate(day.endDate)}）</div>`;
+        }
+        if (!day.available && day.available !== undefined) {
+            return `<div class="weather-day" style="opacity:0.5;"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">⏳</span><span class="weather-temp" style="flex:1;">${day.errorMsg || (day.error ? '載入失敗' : '尚無預報')}</span></div>`;
+        }
+        return `<div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">${day.emoji}</span><span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span><span class="weather-rain">降雨 ${day.rain}%</span></div>`;
+    }).join('');
+}
+
+// Emergency info from segments
+function initEmergencyFromSegments() {
+    const currentSeg = getCurrentSegment();
+    const currentSegEl = $('#emergency-current-segment');
+    const allHotelsEl = $('#emergency-all-hotels');
+
+    if (segments.length > 0 && currentSegEl) {
+        if (currentSeg) {
+            currentSegEl.style.display = 'block';
+            currentSegEl.innerHTML = `
+                <div class="segment-card" style="border-left:4px solid var(--primary);margin-bottom:12px;">
+                    <div class="segment-info">
+                        <div class="segment-city">目前行程：${currentSeg.name}</div>
+                        <div class="segment-dates">${currentSeg.city}（${formatSegDate(currentSeg.startDate)} ~ ${formatSegDate(currentSeg.endDate)}）</div>
+                        ${currentSeg.hotelName ? `<div class="segment-hotel">🏨 ${currentSeg.hotelName}</div>` : ''}
+                        ${currentSeg.hotelAddress ? `<div class="segment-hotel">📫 ${currentSeg.hotelAddress}</div>` : ''}
+                        ${currentSeg.hotelPhone ? `<div class="segment-hotel">📞 <a href="tel:${currentSeg.hotelPhone}">${currentSeg.hotelPhone}</a></div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        if (allHotelsEl && segments.length > 1) {
+            allHotelsEl.innerHTML = `
+                <div class="tool-header" style="font-size:0.85rem;">🏨 所有住宿</div>
+                ${segments.map(s => `
+                    <div class="emergency-item" style="flex-direction:column;align-items:flex-start;gap:2px;">
+                        <span style="font-weight:500;">${s.name} · ${s.city}（${formatSegDate(s.startDate)} ~ ${formatSegDate(s.endDate)}）</span>
+                        <span class="emergency-value">${s.hotelName || '未設定'}</span>
+                        ${s.hotelPhone ? `<a href="tel:${s.hotelPhone}" class="emergency-value">${s.hotelPhone}</a>` : ''}
+                    </div>
+                `).join('')}
+            `;
+        }
     }
 }
 
@@ -1764,8 +2493,14 @@ function initScheduleManage() {
 
 function updateSchedDateDisplay() {
     const picker = $('#sched-date-picker');
+    const label = $('#sched-selected-date');
     if (picker) {
         picker.value = schedManageDate.toISOString().split('T')[0];
+    }
+    if (label) {
+        label.textContent = schedManageDate.toLocaleDateString('zh-TW', {
+            month: 'long', day: 'numeric', weekday: 'short'
+        });
     }
 }
 
@@ -1783,14 +2518,16 @@ function renderScheduleEditList() {
     }
 
     container.innerHTML = daySchedule.map(item => `
-        <div class="schedule-edit-item">
+        <div class="schedule-edit-item${item._pending ? ' pending' : ''}">
             <div class="sched-info">
                 <div class="sched-time">${item.startTime} - ${item.endTime}</div>
                 <div class="sched-place">${item.place}</div>
             </div>
             <div class="sched-actions">
+                ${item._pending ? '<span class="hint">同步中...</span>' : `
                 <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">✏️</button>
                 <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">🗑️</button>
+                `}
             </div>
         </div>
     `).join('');
@@ -1824,71 +2561,80 @@ async function deleteScheduleItemConfirm(idx) {
 async function saveScheduleItem(action, item, idx) {
     const sheetId = window.SHEET_ID;
     const sheetName = window.SHEET_NAME_SCHEDULE;
+    const uuid = (action !== 'add' && scheduleData[idx]) ? (scheduleData[idx]._uuid || '') : '';
 
     const payload = {
         action: action === 'add' ? 'addScheduleItem' :
                 action === 'update' ? 'updateScheduleItem' : 'deleteScheduleItem',
         sheetId: sheetId,
         sheetName: sheetName,
-        rowIndex: idx,
+        user: currentUser,
+        password: getUserPassword(),
+        uuid: uuid,
         item: item
     };
 
+    // Optimistic update: update local immediately, write to server in background
+    if (action === 'add') {
+        item._pending = true;
+        item._uuid = '';
+        scheduleData.push(item);
+    } else if (action === 'update') {
+        scheduleData[idx] = { ...scheduleData[idx], ...item };
+    } else if (action === 'delete') {
+        scheduleData.splice(idx, 1);
+    }
+
+    // Update local cache
     try {
-        const res = await fetch(CONFIG_SCRIPT_URL, {
+        const cached = JSON.parse(localStorage.getItem('cachedAllData') || '{}');
+        if (cached.schedule) {
+            cached.schedule = scheduleData;
+            localStorage.setItem('cachedAllData', JSON.stringify(cached));
+        }
+    } catch (e) {}
+
+    renderScheduleEditList();
+    updateNowTab();
+    updateTimeline();
+
+    // Write to server in background (queued to prevent concurrent delete issues)
+    queueServerWrite(payload, action);
+}
+
+// Ensure server writes execute one at a time (especially for deletes)
+let _writeQueue = Promise.resolve();
+
+function queueServerWrite(payload, action) {
+    _writeQueue = _writeQueue.then(() => {
+        return fetch(CONFIG_SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(payload),
             redirect: 'follow'
+        }).then(async res => {
+            let result = {};
+            try { result = await res.json(); } catch (e) { result = { success: true }; }
+            if (result.error) {
+                console.error('背景寫入失敗:', result.error);
+                addToSyncQueue(payload);
+                showSyncStatus();
+                alert('⚠️ 寫入 Sheet 失敗：' + result.error + '\n資料已暫存');
+            } else if (action === 'delete') {
+                // After delete, refresh to get correct uuid mapping
+                return silentLoadData();
+            }
+            // Refresh to get real uuid for new items
+            if (action === 'add') {
+                return silentLoadData();
+            }
+        }).catch(err => {
+            console.error('背景寫入失敗:', err);
+            addToSyncQueue(payload);
+            showSyncStatus();
+            alert('⚠️ 網路異常，資料已暫存本地');
         });
-
-        // Apps Script returns 200 on success after redirect
-        // If we get any 2xx response, treat as success
-        if (!res.ok && res.status !== 0) {
-            let errMsg = `HTTP ${res.status}`;
-            try { const d = await res.json(); errMsg = d.error || errMsg; } catch (e) {}
-            throw new Error(errMsg);
-        }
-
-        // Try to read response, but don't fail if we can't
-        let result = { success: true };
-        try { result = await res.json(); } catch (e) {}
-        if (result.error) throw new Error(result.error);
-
-        // Update local data
-        if (action === 'add') {
-            scheduleData.push(item);
-        } else if (action === 'update') {
-            scheduleData[idx] = item;
-        } else if (action === 'delete') {
-            scheduleData.splice(idx, 1);
-        }
-
-        renderScheduleEditList();
-        updateNowTab();
-        updateTimeline();
-        alert(action === 'delete' ? '✅ 已刪除' : '✅ 已儲存');
-
-    } catch (err) {
-        console.error('儲存失敗，加入同步佇列:', err);
-        // Offline / failed: queue for later
-        addToSyncQueue(payload);
-        
-        // Still update local data for immediate UI
-        if (action === 'add') {
-            scheduleData.push(item);
-        } else if (action === 'update') {
-            scheduleData[idx] = item;
-        } else if (action === 'delete') {
-            scheduleData.splice(idx, 1);
-        }
-
-        renderScheduleEditList();
-        updateNowTab();
-        updateTimeline();
-        alert('⚠️ 已暫存本地（網路恢復後將自動同步）');
-        showSyncStatus();
-    }
+    });
 }
 
 // --- Offline Sync Queue ---
@@ -1904,16 +2650,16 @@ function getSyncQueue() {
 
 function showSyncStatus() {
     const el = $('#sync-status');
-    const clearBtn = $('#clear-sync-queue');
+    const actionsEl = $('#sync-actions');
     if (!el) return;
     const queue = getSyncQueue();
     if (queue.length > 0) {
         el.style.display = 'block';
         el.textContent = `⚠️ ${queue.length} 筆待同步`;
-        if (clearBtn) clearBtn.style.display = 'inline-block';
+        if (actionsEl) actionsEl.style.display = 'block';
     } else {
         el.style.display = 'none';
-        if (clearBtn) clearBtn.style.display = 'none';
+        if (actionsEl) actionsEl.style.display = 'none';
     }
 }
 
@@ -1924,6 +2670,24 @@ function clearSyncQueue() {
     alert('✅ 已清除');
 }
 
+async function retrySyncQueue() {
+    const queue = getSyncQueue();
+    if (queue.length === 0) {
+        alert('沒有待同步的項目');
+        return;
+    }
+    alert(`開始同步 ${queue.length} 筆...`);
+    await processSyncQueue();
+    const remaining = getSyncQueue();
+    if (remaining.length === 0) {
+        alert('✅ 全部同步成功！');
+        silentLoadData();
+    } else {
+        alert(`⚠️ 還有 ${remaining.length} 筆同步失敗`);
+    }
+    showSyncStatus();
+}
+
 async function processSyncQueue() {
     const queue = getSyncQueue();
     if (queue.length === 0) return;
@@ -1931,10 +2695,12 @@ async function processSyncQueue() {
     const remaining = [];
     for (const entry of queue) {
         try {
+            // Ensure payload has current auth info
+            const payload = { ...entry.payload, user: currentUser, password: getUserPassword() };
             const res = await fetch(CONFIG_SCRIPT_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(entry.payload),
+                body: JSON.stringify(payload),
                 redirect: 'follow'
             });
             // If we get a response (even opaque), consider it success
@@ -1952,16 +2718,10 @@ async function processSyncQueue() {
 }
 
 
-// ==================== AI 助手 (Gemini 3.1 Flash Lite) ====================
+// ==================== AI 助手 (Gemini via Apps Script Proxy) ====================
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
-const GEMINI_MODEL_FALLBACK = 'gemini-3.5-flash-lite';
-
-function getGeminiEndpoint(model) {
-    const key = localStorage.getItem('geminiApiKey') || '';
-    const m = model || GEMINI_MODEL;
-    return `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`;
-}
+const GEMINI_MODEL_FALLBACK = 'gemini-2.5-flash';
 
 let aiChatHistory = [];
 
@@ -2171,26 +2931,16 @@ async function callGeminiTranslate(text) {
         }
     };
 
-    let response = await fetch(getGeminiEndpoint(GEMINI_MODEL), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    let data = await callGeminiProxy(requestBody, GEMINI_MODEL);
 
-    if (!response.ok) {
-        response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+    if (!data || data.error) {
+        data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+    if (!data || data.error) {
+        throw new Error(data?.error?.message || '翻譯失敗');
     }
 
-    const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '翻譯失敗';
 }
 
@@ -2275,15 +3025,26 @@ function formatAIResponse(text) {
 function buildSystemContext() {
     const now = new Date();
     const today = formatDate(now);
+    const todayISO = now.toISOString().split('T')[0];
     const currentTime = now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
+    // Determine current segment
+    const currentSeg = getCurrentSegment();
 
     let context = `你是一個旅遊行程助手。現在的時間是 ${today} ${currentTime}。`;
 
-    if (currentPosition) {
-        context += `\n使用者目前位置：緯度 ${currentPosition.lat.toFixed(5)}, 經度 ${currentPosition.lng.toFixed(5)}`;
+    if (currentSeg) {
+        context += `\n目前所在段落：${currentSeg.country} ${currentSeg.city}（${currentSeg.startDate} ~ ${currentSeg.endDate}）`;
+        if (currentSeg.hotelName) {
+            context += `\n住宿：${currentSeg.hotelName}（${currentSeg.hotelAddress}）`;
+        }
     }
 
-    // Add today's schedule
+    if (currentPosition) {
+        context += `\n使用者 GPS 位置：${currentPosition.lat.toFixed(5)}, ${currentPosition.lng.toFixed(5)}`;
+    }
+
+    // Today's schedule only
     const todaySchedule = scheduleData.filter(item => normalizeDate(item.date) === today);
     if (todaySchedule.length > 0) {
         context += '\n\n【今天的行程】\n';
@@ -2292,32 +3053,56 @@ function buildSystemContext() {
         });
     }
 
-    // Add all schedule data (compact)
-    if (scheduleData.length > 0) {
-        context += '\n\n【所有行程】\n';
-        scheduleData.forEach(item => {
-            context += `- ${item.date} ${item.startTime}~${item.endTime} ${item.place}（${item.address}）${item.notes ? ' / ' + item.notes : ''}\n`;
+    // Tomorrow's schedule (for planning ahead)
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = formatDate(tomorrow);
+    const tomorrowSchedule = scheduleData.filter(item => normalizeDate(item.date) === tomorrowStr);
+    if (tomorrowSchedule.length > 0) {
+        context += '\n\n【明天的行程】\n';
+        tomorrowSchedule.forEach(item => {
+            context += `- ${item.startTime}~${item.endTime} ${item.place}（${item.address}）${item.notes ? '備註：' + item.notes : ''}\n`;
         });
     }
 
-    // Add food list
+    // Food list - filter by current segment's city
     if (foodList.length > 0) {
+        let relevantFood = foodList;
+        if (currentSeg && currentSeg.city) {
+            const cityFood = foodList.filter(f => f.city && f.city === currentSeg.city);
+            if (cityFood.length > 0) {
+                relevantFood = cityFood;
+            } else {
+                // Fallback: try area field
+                const areaFood = foodList.filter(f => f.area && f.area.includes(currentSeg.city));
+                if (areaFood.length > 0) relevantFood = areaFood;
+            }
+        }
+        relevantFood = relevantFood.slice(0, 30);
         context += '\n\n【美食清單】\n';
-        foodList.forEach(item => {
-            const info = [item.type, item.price, item.rating ? `評分${item.rating}` : '', item.area, item.queue, item.recommend].filter(Boolean).join('、');
-            context += `- ${item.name}（${item.address}）${info ? ' / ' + info : ''}${item.notes ? ' / ' + item.notes : ''}\n`;
+        relevantFood.forEach(item => {
+            context += `- ${item.name}（${item.address || ''}）${item.type || ''}${item.recommend ? ' 推薦：' + item.recommend : ''}\n`;
         });
+        if (relevantFood.length < foodList.length) {
+            context += `（僅列出${currentSeg ? currentSeg.city : ''}相關 ${relevantFood.length} 家，共 ${foodList.length} 家）\n`;
+        }
     }
 
-    // Add random places
+    // Random places - filter by current segment's city
     if (randomPlaces.length > 0) {
-        context += '\n\n【隨機景點】\n';
-        randomPlaces.forEach(item => {
-            context += `- ${item.place}（${item.address}）類型：${item.type}${item.notes ? ' / ' + item.notes : ''}\n`;
+        let relevantPlaces = randomPlaces;
+        if (currentSeg && currentSeg.city) {
+            const cityPlaces = randomPlaces.filter(p => p.city && p.city === currentSeg.city);
+            if (cityPlaces.length > 0) relevantPlaces = cityPlaces;
+        }
+        relevantPlaces = relevantPlaces.slice(0, 20);
+        context += '\n\n【景點清單】\n';
+        relevantPlaces.forEach(item => {
+            context += `- ${item.place}（${item.address || ''}）${item.type || ''}\n`;
         });
     }
 
-    context += '\n\n請用繁體中文回答。根據以上資料回答使用者的問題，提供具體的建議和規劃。如果行程有延遲，幫忙建議如何調整。回答盡量簡潔實用。';
+    context += '\n\n請用繁體中文回答。根據以上資料回答問題，提供具體建議。回答簡潔實用。';
 
     return context;
 }
@@ -2340,28 +3125,21 @@ async function callGemini(userMessage) {
         }
     };
 
-    // Try primary model first, fallback on failure
-    let response = await fetch(getGeminiEndpoint(GEMINI_MODEL), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    // Call via Apps Script proxy, try primary model first
+    let data = await callGeminiProxy(requestBody, GEMINI_MODEL);
+    let firstError = '';
 
-    if (!response.ok) {
-        console.log(`${GEMINI_MODEL} 失敗 (${response.status})，切換備援 ${GEMINI_MODEL_FALLBACK}`);
-        response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+    if (!data || data.error) {
+        firstError = typeof data?.error === 'string' ? data.error : (data?.error?.message || 'Unknown error');
+        console.log(`${GEMINI_MODEL} 失敗(${firstError})，切換備援 ${GEMINI_MODEL_FALLBACK}`);
+        data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+    if (!data || data.error) {
+        const secondError = typeof data?.error === 'string' ? data.error : (data?.error?.message || '');
+        throw new Error(firstError || secondError || '呼叫 Gemini 失敗');
     }
 
-    const data = await response.json();
     const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我無法回答這個問題。';
 
     // Add AI response to history
@@ -2373,6 +3151,27 @@ async function callGemini(userMessage) {
     }
 
     return aiResponse;
+}
+
+async function callGeminiProxy(requestBody, model) {
+    const apiKey = localStorage.getItem('geminiApiKey') || '';
+    if (!apiKey) throw new Error('未設定 API Key');
+
+    const m = model || GEMINI_MODEL;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    });
+
+    if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        return { error: { message: errData.error?.message || `HTTP ${res.status}` } };
+    }
+
+    return await res.json();
 }
 
 // --- Image Translation ---
@@ -2464,26 +3263,16 @@ async function callGeminiWithImage(base64, mimeType, mode) {
         }
     };
 
-    let response = await fetch(getGeminiEndpoint(GEMINI_MODEL), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-    });
+    let data = await callGeminiProxy(requestBody, GEMINI_MODEL);
 
-    if (!response.ok) {
+    if (!data || data.error) {
         console.log(`圖片處理：${GEMINI_MODEL} 失敗，切換備援 ${GEMINI_MODEL_FALLBACK}`);
-        response = await fetch(getGeminiEndpoint(GEMINI_MODEL_FALLBACK), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody)
-        });
+        data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+    if (!data || data.error) {
+        throw new Error(data?.error?.message || '圖片處理失敗');
     }
 
-    const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，無法辨識圖片內容。';
 }

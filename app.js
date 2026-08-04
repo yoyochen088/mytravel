@@ -1,7 +1,7 @@
 // ==================== 旅遊助手 PWA ====================
 
 // --- State ---
-const APP_VERSION = 'v2-62';
+const APP_VERSION = 'v2-64';
 let scheduleData = [];
 let randomPlaces = [];
 let foodList = [];
@@ -2824,7 +2824,8 @@ function initEmergencyFromSegments() {
 // ==================== 行程管理 ====================
 
 let schedManageDate = new Date();
-let editingIndex = null; // null = 新增, number = 編輯第幾列
+let editingIndex = null;
+let scheduleDeleteMarked = [];
 
 function initScheduleManage() {
     updateSchedDateDisplay();
@@ -2861,11 +2862,6 @@ function initScheduleManage() {
     let saving = false;
     $('#sched-save').addEventListener('click', async () => {
         if (saving) return;
-        // Only block save for update/delete during sync, not for add
-        if (_isWriting && editingIndex !== null) {
-            alert('⏳ 請等待上一筆同步完成');
-            return;
-        }
         saving = true;
         $('#sched-save').disabled = true;
         $('#sched-save').textContent = '儲存中...';
@@ -2901,6 +2897,7 @@ function initScheduleManage() {
 
     // Show sync queue status
     showSyncStatus();
+    initConfirmDeleteSchedule();
 }
 
 function updateSchedDateDisplay() {
@@ -2927,11 +2924,15 @@ function renderScheduleEditList() {
 
     if (daySchedule.length === 0) {
         container.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><p>這天沒有行程</p></div>';
+        const deleteBtn = $('#confirm-delete-schedule');
+        if (deleteBtn) deleteBtn.style.display = 'none';
         return;
     }
 
-    container.innerHTML = daySchedule.map(item => `
-        <div class="schedule-edit-item${item._pending ? ' pending' : ''}">
+    container.innerHTML = daySchedule.map(item => {
+        const isMarkedDelete = scheduleDeleteMarked.includes(item._idx);
+        return `
+        <div class="schedule-edit-item${isMarkedDelete ? ' marked-delete' : ''}">
             <div class="sched-info">
                 <div class="sched-time">${item.startTime} - ${item.endTime}</div>
                 <div class="sched-place">${item.place}</div>
@@ -2939,11 +2940,18 @@ function renderScheduleEditList() {
             <div class="sched-actions">
                 ${item._pending ? '<span class="hint">同步中...</span>' : `
                 <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">✏️</button>
-                <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">🗑️</button>
+                <button class="sched-action-btn delete" onclick="markScheduleDelete(${item._idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
                 `}
             </div>
         </div>
-    `).join('');
+    `}).join('');
+
+    // Show/hide batch delete button
+    const deleteBtn = $('#confirm-delete-schedule');
+    if (deleteBtn) {
+        deleteBtn.style.display = scheduleDeleteMarked.length > 0 ? 'block' : 'none';
+        deleteBtn.textContent = `🗑️ 確認刪除 ${scheduleDeleteMarked.length} 筆`;
+    }
 }
 
 function showScheduleForm(item) {
@@ -2964,15 +2972,80 @@ function editScheduleItem(idx) {
     showScheduleForm(scheduleData[idx]);
 }
 
-async function deleteScheduleItemConfirm(idx) {
-    if (_isWriting) {
-        alert('⏳ 請等待上一筆同步完成');
-        return;
+function markScheduleDelete(idx) {
+    if (scheduleDeleteMarked.includes(idx)) {
+        scheduleDeleteMarked = scheduleDeleteMarked.filter(i => i !== idx);
+    } else {
+        scheduleDeleteMarked.push(idx);
     }
-    const item = scheduleData[idx];
-    if (!confirm(`確定刪除「${item.place}」？`)) return;
+    renderScheduleEditList();
+}
 
-    await saveScheduleItem('delete', null, idx);
+function initConfirmDeleteSchedule() {
+    const btn = $('#confirm-delete-schedule');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            if (scheduleDeleteMarked.length === 0) return;
+
+            btn.disabled = true;
+            btn.textContent = '刪除中...';
+
+            // Collect UUIDs
+            const uuids = scheduleDeleteMarked.map(idx => scheduleData[idx]?._uuid).filter(Boolean);
+
+            // Optimistic: remove from local (sort descending to avoid index shift)
+            const sorted = [...scheduleDeleteMarked].sort((a, b) => b - a);
+            sorted.forEach(idx => scheduleData.splice(idx, 1));
+            scheduleDeleteMarked = [];
+
+            // Update cache
+            try {
+                const cached = JSON.parse(localStorage.getItem('cachedAllData') || '{}');
+                if (cached.schedule) {
+                    cached.schedule = scheduleData;
+                    localStorage.setItem('cachedAllData', JSON.stringify(cached));
+                }
+            } catch (e) {}
+
+            renderScheduleEditList();
+            updateNowTab();
+            updateTimeline();
+
+            // Background batch delete
+            if (uuids.length > 0) {
+                const payload = {
+                    action: 'batchDeleteScheduleItems',
+                    sheetId: window.SHEET_ID,
+                    sheetName: window.SHEET_NAME_SCHEDULE,
+                    user: currentUser,
+                    password: getUserPassword(),
+                    uuids: uuids
+                };
+                fetch(CONFIG_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify(payload),
+                    redirect: 'follow'
+                }).then(async res => {
+                    let result = {};
+                    try { result = await res.json(); } catch (e) { result = { success: true }; }
+                    if (result.error) {
+                        addToSyncQueue(payload);
+                        showSyncStatus();
+                        alert('⚠️ 刪除寫入失敗：' + result.error);
+                    }
+                    silentLoadData();
+                }).catch(err => {
+                    addToSyncQueue(payload);
+                    showSyncStatus();
+                    alert('⚠️ 網路異常，已暫存本地');
+                });
+            }
+
+            btn.disabled = false;
+            btn.textContent = '🗑️ 確認刪除已選項目';
+        });
+    }
 }
 
 async function saveScheduleItem(action, item, idx) {
@@ -3037,8 +3110,25 @@ async function saveScheduleItem(action, item, idx) {
             alert('⚠️ 網路異常，已暫存本地');
         });
     } else {
-        // Update/Delete need queue to prevent row conflicts
-        queueServerWrite(payload, action);
+        // Update: send directly (no row conflict, row count doesn't change)
+        fetch(CONFIG_SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify(payload),
+            redirect: 'follow'
+        }).then(async res => {
+            let result = {};
+            try { result = await res.json(); } catch (e) { result = { success: true }; }
+            if (result.error) {
+                addToSyncQueue(payload);
+                showSyncStatus();
+                alert('⚠️ 修改寫入失敗：' + result.error);
+            }
+        }).catch(err => {
+            addToSyncQueue(payload);
+            showSyncStatus();
+            alert('⚠️ 網路異常，已暫存本地');
+        });
     }
 }
 

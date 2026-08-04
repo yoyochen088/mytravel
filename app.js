@@ -1,7 +1,7 @@
 // ==================== 旅遊助手 PWA ====================
 
 // --- State ---
-const APP_VERSION = 'v2-61';
+const APP_VERSION = 'v2-62';
 let scheduleData = [];
 let randomPlaces = [];
 let foodList = [];
@@ -410,6 +410,7 @@ async function silentLoadData() {
             // Preserve pending items
             const pendingSchedule = scheduleData.filter(item => item._pending);
             const pendingPacking = packingItems.filter(item => item._pending);
+            const pendingShopping = shoppingItems.filter(item => item._pending);
             
             applyAllData(data);
             
@@ -418,7 +419,7 @@ async function silentLoadData() {
                 pendingSchedule.forEach(p => {
                     const exists = scheduleData.some(s => s.place === p.place && s.date === p.date && s.startTime === p.startTime);
                     if (!exists) scheduleData.push(p);
-                    else p._pending = false; // Found in API, no longer pending
+                    else p._pending = false;
                 });
             }
             if (pendingPacking.length > 0) {
@@ -427,10 +428,20 @@ async function silentLoadData() {
                     if (!exists) packingItems.push(p);
                 });
             }
+            if (pendingShopping.length > 0) {
+                pendingShopping.forEach(p => {
+                    const exists = shoppingItems.some(s => s.item === p.item);
+                    if (!exists) shoppingItems.push(p);
+                });
+            }
             
-            // Re-render schedule edit list if it's open
+            // Re-render lists if open
             const schedList = $('#schedule-edit-list');
             if (schedList) renderScheduleEditList();
+            const packList = $('#packing-list');
+            if (packList) renderPackingList();
+            const shopList = $('#shopping-list');
+            if (shopList) renderShoppingList();
         }
     } catch (e) {
         console.log('背景更新失敗:', e);

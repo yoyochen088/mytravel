@@ -1,4 +1,4 @@
-// ==================== 旅遊助手 PWA ====================
+// ==================== ?��??��? PWA ====================
 
 // --- State ---
 let scheduleData = [];
@@ -185,7 +185,7 @@ function initLocation() {
                 }
             },
             (err) => {
-                $('#current-location').textContent = '📍 無法取得位置（請開啟定位權限）';
+                $('#current-location').textContent = '?? ?��??��?位置（�??��?定�?權�?�?;
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -201,12 +201,12 @@ async function reverseGeocode(lat, lng) {
         const country = data.address.country || '';
         if (city || country) {
             currentLocationName = country ? `${city}, ${country}` : city;
-            $('#current-location').textContent = `📍 ${currentLocationName}`;
+            $('#current-location').textContent = `?? ${currentLocationName}`;
         } else {
-            $('#current-location').textContent = '📍 目前位置已取得';
+            $('#current-location').textContent = '?? ?��?位置已�?�?;
         }
     } catch (e) {
-        $('#current-location').textContent = '📍 目前位置已取得';
+        $('#current-location').textContent = '?? ?��?位置已�?�?;
     }
 }
 
@@ -251,7 +251,7 @@ async function loadUserList() {
         const data = await res.json();
 
         if (!data.users || data.users.length === 0) {
-            container.innerHTML = '<p class="hint">尚未設定任何用戶</p>';
+            container.innerHTML = '<p class="hint">尚未設�?任�??�戶</p>';
             return;
         }
 
@@ -259,13 +259,13 @@ async function loadUserList() {
             <button class="user-btn" onclick="selectUser('${name.replace(/'/g, "\\'")}')">${name}</button>
         `).join('');
     } catch (err) {
-        container.innerHTML = '<p class="hint">❌ 無法載入用戶列表，請檢查 Apps Script 連結</p>';
+        container.innerHTML = '<p class="hint">???��?載入?�戶?�表，�?檢查 Apps Script ???</p>';
         console.error('Load users failed:', err);
     }
 }
 
 async function selectUser(name) {
-    const password = prompt(`請輸入 ${name} 的密碼：`);
+    const password = prompt(`請輸??${name} ?��?碼�?`);
     if (password === null) return; // User cancelled
 
     showLoading(true);
@@ -274,7 +274,7 @@ async function selectUser(name) {
         const config = await res.json();
 
         if (config.error) {
-            alert('登入失敗：' + config.error);
+            alert('?�入失�?�? + config.error);
             showLoading(false);
             return;
         }
@@ -292,7 +292,7 @@ async function selectUser(name) {
         // Load data in background (won't block UI)
         loadData();
     } catch (err) {
-        alert('讀取設定失敗：' + err.message);
+        alert('讀?�設定失?��?' + err.message);
         console.error(err);
         showLoading(false);
     }
@@ -301,9 +301,9 @@ async function selectUser(name) {
 function applyUserConfig(config) {
     // Store sheet settings for data loading
     window.SHEET_ID = config.sheetId || '';
-    window.SHEET_NAME_SCHEDULE = config.sheetNameSchedule || '行程表';
-    window.SHEET_NAME_RANDOM = config.sheetNameRandom || '隨機景點';
-    window.SHEET_NAME_FOOD = config.sheetNameFood || '美食';
+    window.SHEET_NAME_SCHEDULE = config.sheetNameSchedule || '行�?�?;
+    window.SHEET_NAME_RANDOM = config.sheetNameRandom || '?��??��?';
+    window.SHEET_NAME_FOOD = config.sheetNameFood || '美�?';
 
     // Apply trip dates
     localStorage.setItem('tripStartDate', config.tripStartDate || '');
@@ -361,7 +361,7 @@ async function loadData() {
     const sheetId = window.SHEET_ID;
     if (!sheetId) return;
 
-    // 1. 先從 localStorage 快取載入（秒開）
+    // 1. ?��? localStorage 快�?載入（�??��?
     const cached = localStorage.getItem('cachedAllData');
     if (cached) {
         try {
@@ -373,7 +373,7 @@ async function loadData() {
         showLoading(true);
     }
 
-    // 2. 背景從 API 更新最新資料
+    // 2. ?�景�?API ?�新?�?��???
     try {
         const res = await fetch(CONFIG_SCRIPT_URL + '?action=getAllData' + getAuthParams());
         const data = await res.json();
@@ -388,7 +388,7 @@ async function loadData() {
         localStorage.setItem('cachedAllData', JSON.stringify(data));
         applyAllData(data);
     } catch (err) {
-        console.error('載入資料失敗:', err);
+        console.error('載入資�?失�?:', err);
     }
 
     showLoading(false);
@@ -429,7 +429,7 @@ async function silentLoadData() {
             if (schedList) renderScheduleEditList();
         }
     } catch (e) {
-        console.log('背景更新失敗:', e);
+        console.log('?�景?�新失�?:', e);
     }
 }
 
@@ -468,12 +468,12 @@ function mapApiData(arr, mapFn) {
 
 function mapScheduleItem(row) {
     return {
-        date: row['日期'] || row['date'] || '',
-        startTime: row['開始時間'] || row['startTime'] || '',
-        endTime: row['結束時間'] || row['endTime'] || '',
-        place: row['地點'] || row['place'] || '',
-        address: row['地址'] || row['address'] || '',
-        notes: row['備註'] || row['notes'] || '',
+        date: row['?��?'] || row['date'] || '',
+        startTime: row['?��??��?'] || row['startTime'] || '',
+        endTime: row['結�??��?'] || row['endTime'] || '',
+        place: row['?��?'] || row['place'] || '',
+        address: row['?��?'] || row['address'] || '',
+        notes: row['?�註'] || row['notes'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -481,11 +481,11 @@ function mapScheduleItem(row) {
 
 function mapRandomPlace(row) {
     return {
-        place: row['地點'] || row['place'] || '',
-        address: row['地址'] || row['address'] || '',
-        type: row['類型'] || row['type'] || '',
-        notes: row['備註'] || row['notes'] || '',
-        city: row['城市'] || row['city'] || '',
+        place: row['?��?'] || row['place'] || '',
+        address: row['?��?'] || row['address'] || '',
+        type: row['類�?'] || row['type'] || '',
+        notes: row['?�註'] || row['notes'] || '',
+        city: row['?��?'] || row['city'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -493,17 +493,17 @@ function mapRandomPlace(row) {
 
 function mapFoodItem(row) {
     return {
-        name: row['店名'] || row['name'] || '',
-        hours: row['營業時間'] || row['hours'] || '',
-        address: row['地址'] || row['address'] || '',
-        type: row['類型'] || row['type'] || '',
-        price: row['價位'] || row['price'] || '',
-        rating: row['Google評分'] || row['評分'] || row['rating'] || '',
-        queue: row['是否排隊'] || row['是否需排隊'] || row['排隊'] || row['queue'] || '',
-        recommend: row['推薦餐點'] || row['推薦'] || row['recommend'] || '',
-        area: row['地區'] || row['區域'] || row['area'] || '',
-        notes: row['備註'] || row['notes'] || '',
-        city: row['城市'] || row['city'] || '',
+        name: row['店�?'] || row['name'] || '',
+        hours: row['?�業?��?'] || row['hours'] || '',
+        address: row['?��?'] || row['address'] || '',
+        type: row['類�?'] || row['type'] || '',
+        price: row['?��?'] || row['price'] || '',
+        rating: row['Google評�?'] || row['評�?'] || row['rating'] || '',
+        queue: row['?�否?��?'] || row['?�否?�?��?'] || row['?��?'] || row['queue'] || '',
+        recommend: row['?�薦餐�?'] || row['?�薦'] || row['recommend'] || '',
+        area: row['?��?'] || row['?�??] || row['area'] || '',
+        notes: row['?�註'] || row['notes'] || '',
+        city: row['?��?'] || row['city'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -512,8 +512,8 @@ function mapFoodItem(row) {
 function mapPackingItem(row, idx) {
     return {
         id: idx,
-        item: row['物品'] || row['item'] || '',
-        category: row['分類'] || row['category'] || '',
+        item: row['?��?'] || row['item'] || '',
+        category: row['?��?'] || row['category'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -522,16 +522,16 @@ function mapPackingItem(row, idx) {
 function mapSegmentItem(row, idx) {
     return {
         idx,
-        name: row['段落名'] || row['名稱'] || row['name'] || '',
-        country: row['國家'] || row['country'] || '',
-        city: row['城市'] || row['city'] || '',
+        name: row['段落??] || row['?�稱'] || row['name'] || '',
+        country: row['?�家'] || row['country'] || '',
+        city: row['?��?'] || row['city'] || '',
         lat: parseFloat(row['緯度'] || row['lat']) || 0,
         lng: parseFloat(row['經度'] || row['lng']) || 0,
-        startDate: toInputDate(row['開始日'] || row['開始日期'] || row['startDate'] || ''),
-        endDate: toInputDate(row['結束日'] || row['結束日期'] || row['endDate'] || ''),
-        hotelName: row['住宿名稱'] || row['飯店名稱'] || row['hotelName'] || '',
-        hotelAddress: row['住宿地址'] || row['飯店地址'] || row['hotelAddress'] || '',
-        hotelPhone: row['住宿電話'] || row['飯店電話'] || row['hotelPhone'] || '',
+        startDate: toInputDate(row['?��???] || row['?��??��?'] || row['startDate'] || ''),
+        endDate: toInputDate(row['結�???] || row['結�??��?'] || row['endDate'] || ''),
+        hotelName: row['住宿?�稱'] || row['飯�??�稱'] || row['hotelName'] || '',
+        hotelAddress: row['住宿?��?'] || row['飯�??��?'] || row['hotelAddress'] || '',
+        hotelPhone: row['住宿?�話'] || row['飯�??�話'] || row['hotelPhone'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -650,14 +650,14 @@ function updateNowTab() {
     // Update current activity card
     if (currentActivity) {
         $('#now-place').textContent = currentActivity.place;
-        $('#now-time-range').textContent = `⏰ ${currentActivity.startTime} - ${currentActivity.endTime}`;
-        $('#now-notes').textContent = currentActivity.notes ? `📝 ${currentActivity.notes}` : '';
+        $('#now-time-range').textContent = `??${currentActivity.startTime} - ${currentActivity.endTime}`;
+        $('#now-notes').textContent = currentActivity.notes ? `?? ${currentActivity.notes}` : '';
         $('#navigate-now').onclick = () => navigateTo(currentActivity.address || currentActivity.place);
         $('#current-activity').style.display = 'block';
     } else {
-        $('#now-place').textContent = '目前沒有行程';
+        $('#now-place').textContent = '?��?沒�?行�?';
         $('#now-time-range').textContent = '';
-        $('#now-notes').textContent = todaySchedule.length > 0 ? '等待下一個行程...' : '今天沒有安排行程';
+        $('#now-notes').textContent = todaySchedule.length > 0 ? '等�?下�??��?�?..' : '今天沒�?安�?行�?';
         $('#navigate-now').style.display = 'none';
         $('#current-activity').style.display = 'block';
     }
@@ -665,8 +665,8 @@ function updateNowTab() {
     // Update next activity card
     if (nextActivity) {
         $('#next-place').textContent = nextActivity.place;
-        $('#next-time-range').textContent = `⏰ ${nextActivity.startTime} - ${nextActivity.endTime}`;
-        $('#next-notes').textContent = nextActivity.notes ? `📝 ${nextActivity.notes}` : '';
+        $('#next-time-range').textContent = `??${nextActivity.startTime} - ${nextActivity.endTime}`;
+        $('#next-notes').textContent = nextActivity.notes ? `?? ${nextActivity.notes}` : '';
         $('#navigate-next').onclick = () => navigateTo(nextActivity.address || nextActivity.place);
         $('#next-activity').style.display = 'block';
     } else {
@@ -687,8 +687,8 @@ function updateTimeline() {
     if (daySchedule.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">📭</div>
-                <p>這天沒有安排行程</p>
+                <div class="emoji">?��</div>
+                <p>?�天沒�?安�?行�?</p>
             </div>
         `;
         return;
@@ -710,7 +710,7 @@ function updateTimeline() {
                 <div class="place">${item.place}</div>
                 ${item.notes ? `<div class="notes">${item.notes}</div>` : ''}
                 <button class="navigate-timeline" onclick="navigateTo('${(item.address || item.place).replace(/'/g, "\\'")}')">
-                    🧭 導航
+                    ?�� 導航
                 </button>
             </div>
         `;
@@ -761,8 +761,8 @@ function updateRandomList() {
         filtersContainer.innerHTML = '';
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">🎲</div>
-                <p>尚未設定隨機景點</p>
+                <div class="emoji">?��</div>
+                <p>尚未設�??��??��?</p>
             </div>
         `;
         return;
@@ -775,12 +775,12 @@ function updateRandomList() {
     const hiddenCats = categories.slice(MAX_VISIBLE);
 
     filtersContainer.innerHTML = `
-        <button class="filter-btn ${selectedCategory === 'all' ? 'active' : ''}" data-category="all">全部</button>
+        <button class="filter-btn ${selectedCategory === 'all' ? 'active' : ''}" data-category="all">?�部</button>
         ${visibleCats.map(cat => `
             <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}">${getCategoryEmoji(cat)} ${cat}</button>
         `).join('')}
         ${hiddenCats.length > 0 ? `
-            <button class="filter-btn filter-expand-btn" data-expand="places">+${hiddenCats.length} 更多</button>
+            <button class="filter-btn filter-expand-btn" data-expand="places">+${hiddenCats.length} ?��?</button>
             ${hiddenCats.map(cat => `
                 <button class="filter-btn filter-hidden ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}" style="display:none;">${getCategoryEmoji(cat)} ${cat}</button>
             `).join('')}
@@ -822,8 +822,8 @@ function renderFilteredList() {
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">📭</div>
-                <p>這個分類沒有景點</p>
+                <div class="emoji">?��</div>
+                <p>?�個�?類�??�景�?/p>
             </div>
         `;
         return;
@@ -842,30 +842,30 @@ function renderFilteredList() {
 
 function getCategoryEmoji(type) {
     const emojiMap = {
-        '吃': '🍽️',
-        '美食': '🍽️',
-        '餐廳': '🍽️',
-        '小吃': '🍜',
-        '咖啡': '☕',
-        '飲料': '🧋',
-        '購物': '🛍️',
-        '逛街': '🛍️',
-        '景點': '📸',
-        '觀光': '📸',
-        '自然': '🌿',
-        '公園': '🌳',
-        '玩具店': '🧸',
-        '玩具': '🧸',
-        '文創': '🎨',
-        '書店': '📚',
-        '夜市': '🏮',
-        '廟宇': '🏯',
-        '博物館': '🏛️',
-        '娛樂': '🎮',
-        '酒吧': '🍺',
-        '甜點': '🍰',
+        '??: '?���?,
+        '美�?': '?���?,
+        '餐廳': '?���?,
+        '小�?': '??',
+        '?�啡': '??,
+        '飲�?': '??',
+        '購物': '??�?,
+        '?��?': '??�?,
+        '?��?': '?��',
+        '觀??: '?��',
+        '?�然': '?��',
+        '?��?': '?��',
+        '?�具�?: '?��',
+        '?�具': '?��',
+        '?�創': '?��',
+        '?��?': '??',
+        '夜�?': '?��',
+        '廟�?': '?��',
+        '?�物�?: '??�?,
+        '娛�?': '?��',
+        '?�吧': '?��',
+        '?��?': '?��',
     };
-    return emojiMap[type] || '📍';
+    return emojiMap[type] || '??';
 }
 
 function shuffleRandom() {
@@ -879,7 +879,7 @@ function shuffleRandom() {
     $('#random-pick').style.display = 'block';
     $('#random-place').textContent = pick.place;
     $('#random-type').textContent = pick.type ? `${getCategoryEmoji(pick.type)} ${pick.type}` : '';
-    $('#random-notes').textContent = pick.notes ? `📝 ${pick.notes}` : '';
+    $('#random-notes').textContent = pick.notes ? `?? ${pick.notes}` : '';
     $('#navigate-random').onclick = () => navigateTo(pick.address || pick.place);
 
     // Animation
@@ -898,8 +898,8 @@ function updateFoodList() {
         filtersContainer.innerHTML = '';
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">🍽️</div>
-                <p>尚未設定美食清單</p>
+                <div class="emoji">?���?/div>
+                <p>尚未設�?美�?清單</p>
             </div>
         `;
         return;
@@ -912,12 +912,12 @@ function updateFoodList() {
     const hiddenCats = categories.slice(MAX_VISIBLE_FOOD);
 
     filtersContainer.innerHTML = `
-        <button class="filter-btn ${selectedFoodCategory === 'all' ? 'active' : ''}" data-category="all">全部</button>
+        <button class="filter-btn ${selectedFoodCategory === 'all' ? 'active' : ''}" data-category="all">?�部</button>
         ${visibleCats.map(cat => `
             <button class="filter-btn ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}">${getFoodEmoji(cat)} ${cat}</button>
         `).join('')}
         ${hiddenCats.length > 0 ? `
-            <button class="filter-btn filter-expand-btn" data-expand="food">+${hiddenCats.length} 更多</button>
+            <button class="filter-btn filter-expand-btn" data-expand="food">+${hiddenCats.length} ?��?</button>
             ${hiddenCats.map(cat => `
                 <button class="filter-btn filter-hidden ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}" style="display:none;">${getFoodEmoji(cat)} ${cat}</button>
             `).join('')}
@@ -959,8 +959,8 @@ function renderFilteredFoodList() {
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">📭</div>
-                <p>這個分類沒有餐廳</p>
+                <div class="emoji">?��</div>
+                <p>?�個�?類�??��?�?/p>
             </div>
         `;
         return;
@@ -968,19 +968,19 @@ function renderFilteredFoodList() {
 
     container.innerHTML = filtered.map(item => {
         const tags = [
-            item.price ? `💰 ${item.price}` : '',
-            item.rating ? `⭐ ${item.rating}` : '',
-            item.queue ? `🕐 ${item.queue}` : '',
-            item.area ? `📍 ${item.area}` : '',
-            item.hours ? `🕒 ${item.hours}` : ''
-        ].filter(Boolean).join('　');
+            item.price ? `?�� ${item.price}` : '',
+            item.rating ? `�?${item.rating}` : '',
+            item.queue ? `?? ${item.queue}` : '',
+            item.area ? `?? ${item.area}` : '',
+            item.hours ? `?? ${item.hours}` : ''
+        ].filter(Boolean).join('?�');
 
         return `
             <div class="place-card food-card" onclick="navigateTo('${(item.address || item.name).replace(/'/g, "\\'")}')">
                 <div class="place-info">
                     <h3>${item.name}</h3>
                     ${tags ? `<p class="food-tags">${tags}</p>` : ''}
-                    ${item.recommend ? `<p class="food-recommend">🍽️ ${item.recommend}</p>` : ''}
+                    ${item.recommend ? `<p class="food-recommend">?���?${item.recommend}</p>` : ''}
                     ${item.notes ? `<p class="food-notes">${item.notes}</p>` : ''}
                 </div>
                 ${item.type ? `<span class="place-type">${getFoodEmoji(item.type)} ${item.type}</span>` : ''}
@@ -991,38 +991,38 @@ function renderFilteredFoodList() {
 
 function getFoodEmoji(type) {
     const emojiMap = {
-        '拉麵': '🍜',
-        '日式': '🍱',
-        '壽司': '🍣',
-        '燒肉': '🥩',
-        '火鍋': '🫕',
-        '牛排': '🥩',
-        '義式': '🍝',
-        '披薩': '🍕',
-        '漢堡': '🍔',
-        '炸雞': '🍗',
-        '中式': '🥢',
-        '台式': '🍚',
-        '小吃': '🧆',
-        '滷味': '🍲',
-        '早餐': '🥞',
-        '早午餐': '🥞',
-        '咖啡': '☕',
-        '飲料': '🧋',
-        '甜點': '🍰',
-        '冰品': '🍦',
-        '麵包': '🥐',
-        '韓式': '🥘',
-        '泰式': '🍛',
-        '印度': '🍛',
-        '越南': '🍜',
-        '素食': '🥗',
-        '海鮮': '🦐',
-        '居酒屋': '🍶',
-        '酒吧': '🍺',
-        '夜市': '🏮',
+        '?�麵': '??',
+        '?��?': '?��',
+        '壽司': '?��',
+        '?��?': '?��',
+        '?��?': '??',
+        '?��?': '?��',
+        '義�?': '??',
+        '?�薩': '??',
+        '漢堡': '??',
+        '?��?': '??',
+        '中�?': '?��',
+        '?��?': '??',
+        '小�?': '??',
+        '滷味': '?��',
+        '?��?': '??',
+        '?��?�?: '??',
+        '?�啡': '??,
+        '飲�?': '??',
+        '?��?': '?��',
+        '?��?': '?��',
+        '麵�?': '??',
+        '?��?': '??',
+        '泰�?': '??',
+        '?�度': '??',
+        '越�?': '??',
+        '素�?': '??',
+        '海鮮': '??',
+        '居�?�?: '?��',
+        '?�吧': '?��',
+        '夜�?': '?��',
     };
-    return emojiMap[type] || '🍽️';
+    return emojiMap[type] || '?���?;
 }
 
 function shuffleFood() {
@@ -1038,14 +1038,14 @@ function shuffleFood() {
     $('#food-pick-type').textContent = pick.type ? `${getFoodEmoji(pick.type)} ${pick.type}` : '';
 
     const details = [
-        pick.price ? `💰 ${pick.price}` : '',
-        pick.rating ? `⭐ ${pick.rating}` : '',
-        pick.queue ? `🕐 ${pick.queue}` : '',
-        pick.area ? `📍 ${pick.area}` : '',
-        pick.hours ? `🕒 ${pick.hours}` : '',
-        pick.recommend ? `🍽️ ${pick.recommend}` : '',
-        pick.notes ? `📝 ${pick.notes}` : ''
-    ].filter(Boolean).join('　');
+        pick.price ? `?�� ${pick.price}` : '',
+        pick.rating ? `�?${pick.rating}` : '',
+        pick.queue ? `?? ${pick.queue}` : '',
+        pick.area ? `?? ${pick.area}` : '',
+        pick.hours ? `?? ${pick.hours}` : '',
+        pick.recommend ? `?���?${pick.recommend}` : '',
+        pick.notes ? `?? ${pick.notes}` : ''
+    ].filter(Boolean).join('?�');
 
     $('#food-pick-notes').textContent = details;
     $('#navigate-food-pick').onclick = () => navigateTo(pick.address || pick.name);
@@ -1101,7 +1101,7 @@ async function refreshAll() {
             refreshToolsDisplay();
         }
     } catch (e) {
-        console.log('重新取得設定失敗:', e);
+        console.log('?�新?��?設�?失�?:', e);
     }
 
     // Reload all data via getAllData
@@ -1133,7 +1133,7 @@ async function refreshAll() {
         updateFoodList();
         renderPackingList();
     } catch (err) {
-        console.error('重新載入資料失敗:', err);
+        console.error('?�新載入資�?失�?:', err);
     }
 }
 
@@ -1211,11 +1211,11 @@ function initPullToRefresh() {
         if (!pulling) return;
         pulling = false;
         if (indicator.classList.contains('visible')) {
-            indicator.querySelector('span').textContent = '🔄 更新中...';
+            indicator.querySelector('span').textContent = '?? ?�新�?..';
             // Don't show full-screen loading, just update in background
             refreshAll().then(() => {
                 indicator.classList.remove('visible');
-                indicator.querySelector('span').textContent = '↓ 下拉更新';
+                indicator.querySelector('span').textContent = '??下�??�新';
             });
         }
     });
@@ -1263,7 +1263,7 @@ function initCountdown() {
         if (savingDates) return;
         savingDates = true;
         $('#save-trip-dates').disabled = true;
-        $('#save-trip-dates').textContent = '儲存中...';
+        $('#save-trip-dates').textContent = '?��?�?..';
 
         const startVal = startInput.value;
         const endVal = endInput.value;
@@ -1277,7 +1277,7 @@ function initCountdown() {
             tripEndDate: endVal
         });
 
-        alert('✅ 旅程日期已儲存');
+        alert('???��??��?已儲�?);
         savingDates = false;
         $('#save-trip-dates').disabled = false;
         $('#save-trip-dates').textContent = '修改';
@@ -1306,7 +1306,7 @@ function toInputDate(str) {
     return '';
 }
 
-// Format date for display (e.g. "2026-08-08" → "8/8")
+// Format date for display (e.g. "2026-08-08" ??"8/8")
 function formatSegDate(str) {
     if (!str) return '';
     const normalized = toInputDate(str);
@@ -1325,7 +1325,7 @@ function updateCountdown() {
 
     if (!startStr) {
         numberEl.textContent = '-';
-        labelEl.textContent = '請設定出發日期';
+        labelEl.textContent = '請設定出?�日??;
         return;
     }
 
@@ -1338,15 +1338,15 @@ function updateCountdown() {
 
     if (daysUntilStart > 0) {
         numberEl.textContent = daysUntilStart;
-        labelEl.textContent = '天後出發 ✈️';
+        labelEl.textContent = '天�??�發 ?��?';
     } else if (end && today <= end) {
         const tripDay = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
         const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
         numberEl.textContent = `Day ${tripDay}`;
-        labelEl.textContent = `旅程第 ${tripDay}/${totalDays} 天 🎉`;
+        labelEl.textContent = `?��?�?${tripDay}/${totalDays} �???`;
     } else {
-        numberEl.textContent = '🏠';
-        labelEl.textContent = '旅程已結束，回憶滿滿';
+        numberEl.textContent = '??';
+        labelEl.textContent = '?��?已�??��??�憶滿滿';
     }
 }
 
@@ -1397,7 +1397,7 @@ function initCurrency() {
 async function fetchExchangeRate() {
     const btn = $('#fetch-rate');
     btn.disabled = true;
-    btn.textContent = '更新中...';
+    btn.textContent = '?�新�?..';
 
     try {
         const res = await fetch('https://api.exchangerate-api.com/v4/latest/JPY');
@@ -1412,13 +1412,13 @@ async function fetchExchangeRate() {
             if (jpy > 0) {
                 $('#twd-input').value = (jpy * rate).toFixed(0);
             }
-            btn.textContent = '✅ 已更新';
-            setTimeout(() => { btn.textContent = '更新匯率'; }, 2000);
+            btn.textContent = '??已更??;
+            setTimeout(() => { btn.textContent = '?�新?��?'; }, 2000);
         }
     } catch (err) {
-        btn.textContent = '❌ 失敗';
-        setTimeout(() => { btn.textContent = '更新匯率'; }, 2000);
-        console.error('匯率抓取失敗:', err);
+        btn.textContent = '??失�?';
+        setTimeout(() => { btn.textContent = '?�新?��?'; }, 2000);
+        console.error('?��??��?失�?:', err);
     }
 
     btn.disabled = false;
@@ -1445,7 +1445,7 @@ function initEmergency() {
         const form = $('#emergency-edit-form');
         const isVisible = form.style.display !== 'none';
         form.style.display = isVisible ? 'none' : 'flex';
-        $('#toggle-emergency-edit').textContent = isVisible ? '修改住宿資訊' : '取消';
+        $('#toggle-emergency-edit').textContent = isVisible ? '修改住宿資�?' : '?��?';
     });
 
     // Save with debounce
@@ -1459,8 +1459,8 @@ function initEmergency() {
         const phone = $('#edit-hotel-phone').value.trim();
         localStorage.setItem('hotelAddress', address);
         localStorage.setItem('hotelPhone', phone);
-        $('#hotel-address').textContent = address || '未設定';
-        $('#hotel-phone').textContent = phone || '未設定';
+        $('#hotel-address').textContent = address || '?�設�?;
+        $('#hotel-phone').textContent = phone || '?�設�?;
         $('#hotel-phone').href = phone ? `tel:${phone}` : '';
 
         // Save to Apps Script
@@ -1471,9 +1471,9 @@ function initEmergency() {
 
         // Hide form
         $('#emergency-edit-form').style.display = 'none';
-        $('#toggle-emergency-edit').textContent = '修改住宿資訊';
+        $('#toggle-emergency-edit').textContent = '修改住宿資�?';
 
-        alert('✅ 住宿資訊已儲存');
+        alert('??住宿資�?已儲�?);
         saving = false;
         $('#save-emergency').disabled = false;
     });
@@ -1517,13 +1517,13 @@ function initPackingList() {
             });
 
             if (items.length === 0) {
-                alert('請至少填寫一個物品');
+                alert('請至少填寫�??�物??);
                 return;
             }
 
             saving = true;
             saveBtn.disabled = true;
-            saveBtn.textContent = '送出中...';
+            saveBtn.textContent = '?�出�?..';
 
             await batchSavePackingItems(items);
 
@@ -1531,7 +1531,7 @@ function initPackingList() {
             packingBatchItems = [];
             saving = false;
             saveBtn.disabled = false;
-            saveBtn.textContent = '全部送出';
+            saveBtn.textContent = '?�部?�出';
         });
     }
 }
@@ -1542,10 +1542,10 @@ function renderPackingBatchInputs() {
     container.innerHTML = packingBatchItems.map((item, idx) => `
         <div class="batch-input-row form-row" style="margin-bottom:8px;">
             <div class="form-group" style="flex:2;">
-                <input type="text" class="batch-name" placeholder="物品名稱" value="${item.item || ''}">
+                <input type="text" class="batch-name" placeholder="?��??�稱" value="${item.item || ''}">
             </div>
             <div class="form-group" style="flex:1;">
-                <input type="text" class="batch-cat" placeholder="分類" value="${item.category || ''}">
+                <input type="text" class="batch-cat" placeholder="?��?" value="${item.category || ''}">
             </div>
         </div>
     `).join('');
@@ -1584,7 +1584,7 @@ function initSyncPackingChecks() {
     if (btn) {
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            btn.textContent = '同步中...';
+            btn.textContent = '?�步�?..';
             const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
             const payload = {
                 action: 'syncPackingChecks',
@@ -1594,10 +1594,10 @@ function initSyncPackingChecks() {
                 checkedIndexes: checked
             };
             queueServerWrite(payload, 'sync');
-            btn.textContent = '✅ 已同步';
+            btn.textContent = '??已�?�?;
             setTimeout(() => {
                 btn.disabled = false;
-                btn.textContent = '🔄 同步勾選狀態';
+                btn.textContent = '?? ?�步?�選?�??;
             }, 2000);
         });
     }
@@ -1637,13 +1637,13 @@ function initShoppingList() {
             });
 
             if (items.length === 0) {
-                alert('請至少填寫一個物品');
+                alert('請至少填寫�??�物??);
                 return;
             }
 
             saving = true;
             saveBtn.disabled = true;
-            saveBtn.textContent = '送出中...';
+            saveBtn.textContent = '?�出�?..';
 
             await batchSaveShoppingItems(items);
 
@@ -1651,7 +1651,7 @@ function initShoppingList() {
             shoppingBatchItems = [];
             saving = false;
             saveBtn.disabled = false;
-            saveBtn.textContent = '全部送出';
+            saveBtn.textContent = '?�部?�出';
         });
     }
 }
@@ -1662,10 +1662,10 @@ function renderShoppingBatchInputs() {
     container.innerHTML = shoppingBatchItems.map((item, idx) => `
         <div class="batch-input-row form-row" style="margin-bottom:8px;">
             <div class="form-group" style="flex:2;">
-                <input type="text" class="batch-name" placeholder="物品名稱" value="${item.item || ''}">
+                <input type="text" class="batch-name" placeholder="?��??�稱" value="${item.item || ''}">
             </div>
             <div class="form-group" style="flex:1;">
-                <input type="text" class="batch-cat" placeholder="分類" value="${item.category || ''}">
+                <input type="text" class="batch-cat" placeholder="?��?" value="${item.category || ''}">
             </div>
         </div>
     `).join('');
@@ -1682,7 +1682,7 @@ function loadShoppingList() {
     const container = $('#shopping-list');
     if (!container) return;
     if (shoppingItems.length === 0) {
-        container.innerHTML = '<p class="hint">購物清單是空的</p>';
+        container.innerHTML = '<p class="hint">購物清單?�空??/p>';
         return;
     }
     renderShoppingList();
@@ -1696,7 +1696,7 @@ function renderShoppingList() {
     const deleteBtn = $('#confirm-delete-shopping');
 
     if (shoppingItems.length === 0) {
-        container.innerHTML = '<p class="hint">購物清單是空的</p>';
+        container.innerHTML = '<p class="hint">購物清單?�空??/p>';
         updateShoppingProgress(0, 0);
         if (syncBtn) syncBtn.style.display = 'none';
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -1712,21 +1712,21 @@ function renderShoppingList() {
 
         if (isEditing) {
             return `
-                <div class="packing-item editing">
-                    <input type="text" class="edit-name" value="${item.item}" style="flex:2;padding:6px;border:1px solid var(--primary);border-radius:4px;">
-                    <input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:4px;">
-                    <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditShopping(${idx})">✓</button>
+                <div class="packing-item editing" style="flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="?��??�稱"></div>
+                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="?��?"></div>
+                    <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditShopping(${idx})">??/button>
                 </div>
             `;
         }
 
         return `
             <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="toggleShopping(${idx})">
-                <div class="check">${isChecked ? '✓' : ''}</div>
+                <div class="check">${isChecked ? '?? : ''}</div>
                 <span class="packing-name">${item.item}</span>
                 ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
-                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditShopping(${idx})">✏️</button>
-                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markShoppingDelete(${idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
+                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditShopping(${idx})">?��?</button>
+                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markShoppingDelete(${idx})">${isMarkedDelete ? '?? : '??�?}</button>
             </div>
         `;
     }).join('');
@@ -1735,7 +1735,7 @@ function renderShoppingList() {
 
     if (deleteBtn) {
         deleteBtn.style.display = shoppingDeleteMarked.length > 0 ? 'block' : 'none';
-        deleteBtn.textContent = `🗑️ 確認刪除 ${shoppingDeleteMarked.length} 項`;
+        deleteBtn.textContent = `??�?確�??�除 ${shoppingDeleteMarked.length} ?�`;
     }
 }
 
@@ -1764,7 +1764,7 @@ function confirmEditShopping(idx) {
     const cat = row.querySelector('.edit-cat').value.trim();
 
     if (!name) {
-        alert('物品名稱不能為空');
+        alert('?��??�稱不能?�空');
         return;
     }
 
@@ -1795,7 +1795,7 @@ function initConfirmDeleteShopping() {
             if (shoppingDeleteMarked.length === 0) return;
 
             btn.disabled = true;
-            btn.textContent = '刪除中...';
+            btn.textContent = '?�除�?..';
 
             const sorted = [...shoppingDeleteMarked].sort((a, b) => b - a);
             sorted.forEach(idx => shoppingItems.splice(idx, 1));
@@ -1814,7 +1814,7 @@ function initConfirmDeleteShopping() {
             queueServerWrite(payload, 'delete');
 
             btn.disabled = false;
-            btn.textContent = '🗑️ 確認刪除已選項目';
+            btn.textContent = '??�?確�??�除已選?�目';
         });
     }
 }
@@ -1861,7 +1861,7 @@ function initSyncShoppingChecks() {
     if (btn) {
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            btn.textContent = '同步中...';
+            btn.textContent = '?�步�?..';
             const checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
             const payload = {
                 action: 'syncShoppingChecks',
@@ -1871,10 +1871,10 @@ function initSyncShoppingChecks() {
                 checkedIndexes: checked
             };
             queueServerWrite(payload, 'sync');
-            btn.textContent = '✅ 已同步';
+            btn.textContent = '??已�?�?;
             setTimeout(() => {
                 btn.disabled = false;
-                btn.textContent = '🔄 同步勾選狀態';
+                btn.textContent = '?? ?�步?�選?�??;
             }, 2000);
         });
     }
@@ -1885,7 +1885,7 @@ async function loadPackingList() {
     const container = $('#packing-list');
     if (!container) return;
     if (packingItems.length === 0) {
-        container.innerHTML = '<p class="hint">行李清單是空的</p>';
+        container.innerHTML = '<p class="hint">行�?清單?�空??/p>';
         return;
     }
     renderPackingList();
@@ -1914,7 +1914,7 @@ function renderPackingList() {
     const deleteBtn = $('#confirm-delete-packing');
 
     if (packingItems.length === 0) {
-        container.innerHTML = '<p class="hint">行李清單是空的</p>';
+        container.innerHTML = '<p class="hint">行�?清單?�空??/p>';
         updatePackingProgress(0, 0);
         if (syncBtn) syncBtn.style.display = 'none';
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -1930,21 +1930,21 @@ function renderPackingList() {
 
         if (isEditing) {
             return `
-                <div class="packing-item editing">
-                    <input type="text" class="edit-name" value="${item.item}" style="flex:2;padding:6px;border:1px solid var(--primary);border-radius:4px;">
-                    <input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:4px;">
-                    <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditPacking(${idx})">✓</button>
+                <div class="packing-item editing" style="flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="?��??�稱"></div>
+                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="?��?"></div>
+                    <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditPacking(${idx})">??/button>
                 </div>
             `;
         }
 
         return `
             <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="togglePacking(${item.id !== undefined ? item.id : idx})">
-                <div class="check">${isChecked ? '✓' : ''}</div>
+                <div class="check">${isChecked ? '?? : ''}</div>
                 <span class="packing-name">${item.item}</span>
                 ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
-                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditPacking(${idx})">✏️</button>
-                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markPackingDelete(${idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
+                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditPacking(${idx})">?��?</button>
+                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markPackingDelete(${idx})">${isMarkedDelete ? '?? : '??�?}</button>
             </div>
         `;
     }).join('');
@@ -1954,7 +1954,7 @@ function renderPackingList() {
     // Show/hide delete confirm button
     if (deleteBtn) {
         deleteBtn.style.display = packingDeleteMarked.length > 0 ? 'block' : 'none';
-        deleteBtn.textContent = `🗑️ 確認刪除 ${packingDeleteMarked.length} 項`;
+        deleteBtn.textContent = `??�?確�??�除 ${packingDeleteMarked.length} ?�`;
     }
 }
 
@@ -1982,7 +1982,7 @@ function confirmEditPacking(idx) {
     const cat = row.querySelector('.edit-cat').value.trim();
 
     if (!name) {
-        alert('物品名稱不能為空');
+        alert('?��??�稱不能?�空');
         return;
     }
 
@@ -2013,7 +2013,7 @@ function initConfirmDeletePacking() {
             if (packingDeleteMarked.length === 0) return;
 
             btn.disabled = true;
-            btn.textContent = '刪除中...';
+            btn.textContent = '?�除�?..';
 
             // Optimistic: remove from local
             const sorted = [...packingDeleteMarked].sort((a, b) => b - a);
@@ -2034,7 +2034,7 @@ function initConfirmDeletePacking() {
             queueServerWrite(payload, 'delete');
 
             btn.disabled = false;
-            btn.textContent = '🗑️ 確認刪除已選項目';
+            btn.textContent = '??�?確�??�除已選?�目';
         });
     }
 }
@@ -2082,7 +2082,7 @@ async function saveUserInfoToServer(fields) {
             localStorage.setItem('userConfig_' + currentUser, JSON.stringify(cached));
         } catch (e) {}
     } catch (err) {
-        console.error('儲存到伺服器失敗:', err);
+        console.error('?��??�伺?�器失�?:', err);
     }
 }
 
@@ -2091,29 +2091,29 @@ async function saveUserInfoToServer(fields) {
 
 // Weather code to emoji mapping
 function getWeatherEmoji(code) {
-    if (code === 0) return '☀️';
-    if (code <= 3) return '⛅';
-    if (code <= 48) return '🌫️';
-    if (code <= 55) return '🌦️';
-    if (code <= 65) return '🌧️';
-    if (code <= 77) return '🌨️';
-    if (code <= 82) return '🌧️';
-    if (code <= 86) return '🌨️';
-    if (code >= 95) return '⛈️';
-    return '🌤️';
+    if (code === 0) return '?��?;
+    if (code <= 3) return '??;
+    if (code <= 48) return '?���?;
+    if (code <= 55) return '?���?;
+    if (code <= 65) return '?���?;
+    if (code <= 77) return '?���?;
+    if (code <= 82) return '?���?;
+    if (code <= 86) return '?���?;
+    if (code >= 95) return '?��?';
+    return '?���?;
 }
 
 function getWeatherDesc(code) {
-    if (code === 0) return '晴';
+    if (code === 0) return '??;
     if (code <= 3) return '多雲';
-    if (code <= 48) return '霧';
+    if (code <= 48) return '??;
     if (code <= 55) return '小雨';
-    if (code <= 65) return '雨';
-    if (code <= 77) return '雪';
-    if (code <= 82) return '陣雨';
+    if (code <= 65) return '??;
+    if (code <= 77) return '??;
+    if (code <= 82) return '??��';
     if (code <= 86) return '大雪';
-    if (code >= 95) return '雷雨';
-    return '晴時多雲';
+    if (code >= 95) return '?�雨';
+    return '?��?多雲';
 }
 
 async function fetchWeather(lat, lng, days) {
@@ -2150,10 +2150,10 @@ async function updateCurrentWeather() {
         const emoji = getWeatherEmoji(code);
         const desc = getWeatherDesc(code);
 
-        el.textContent = `${emoji} ${temp}°C ${desc}　降雨 ${rainProb}%`;
+        el.textContent = `${emoji} ${temp}°C ${desc}?�?�雨 ${rainProb}%`;
         el.style.display = 'block';
     } catch (e) {
-        console.log('天氣取得失敗:', e);
+        console.log('天氣?��?失�?:', e);
     }
 }
 
@@ -2179,7 +2179,7 @@ async function loadTripWeather() {
 
     if (start > maxForecastDate) {
         section.style.display = 'block';
-        container.innerHTML = '<p class="hint">天氣預報僅提供未來 16 天，旅程日期超出範圍</p>';
+        container.innerHTML = '<p class="hint">天氣?�報?��?供未�?16 天�??��??��?超出範�?</p>';
         return;
     }
 
@@ -2225,14 +2225,14 @@ async function loadTripWeather() {
 
         if (tripDays.length === 0) {
             section.style.display = 'block';
-            container.innerHTML = '<p class="hint">無法取得旅程期間天氣資料</p>';
+            container.innerHTML = '<p class="hint">?��??��??��??��?天氣資�?</p>';
             return;
         }
 
         // Rain alert
         if (rainyDays.length > 0) {
-            const rainyDateList = rainyDays.map(d => d.dayLabel).join('、');
-            alertEl.textContent = `☔ 提醒：${rainyDateList} 降雨機率高，記得帶傘！`;
+            const rainyDateList = rainyDays.map(d => d.dayLabel).join('??);
+            alertEl.textContent = `???��?�?{rainyDateList} ?�雨機�?高�?記�?帶�?！`;
             alertEl.style.display = 'block';
         } else {
             alertEl.style.display = 'none';
@@ -2269,8 +2269,8 @@ async function loadTripWeather() {
                 return `
                     <div class="weather-day" style="opacity:0.5;">
                         <span class="weather-date">${day.dayLabel}</span>
-                        <span class="weather-icon">⏳</span>
-                        <span class="weather-temp" style="flex:1;">尚無預報（超出預報範圍）</span>
+                        <span class="weather-icon">??/span>
+                        <span class="weather-temp" style="flex:1;">尚無?�報（�??��??��??��?</span>
                     </div>
                 `;
             }
@@ -2279,88 +2279,88 @@ async function loadTripWeather() {
                     <span class="weather-date">${day.dayLabel}</span>
                     <span class="weather-icon">${day.emoji}</span>
                     <span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span>
-                    <span class="weather-rain">降雨 ${day.rain}%</span>
+                    <span class="weather-rain">?�雨 ${day.rain}%</span>
                 </div>
             `;
         }).join('');
 
         section.style.display = 'block';
     } catch (e) {
-        console.log('旅程天氣取得失敗:', e);
+        console.log('?��?天氣?��?失�?:', e);
         section.style.display = 'block';
-        container.innerHTML = '<p class="hint">天氣資料載入失敗</p>';
+        container.innerHTML = '<p class="hint">天氣資�?載入失�?</p>';
     }
 }
 
 
-// ==================== 行程段落管理 ====================
+// ==================== 行�?段落管�? ====================
 
-// 常見旅遊城市座標資料庫
+// 常�??��??��?座�?資�?�?
 const CITY_DATABASE = {
-    '日本': {
-        '東京': { lat: 35.6762, lng: 139.6503 },
+    '?�本': {
+        '?�京': { lat: 35.6762, lng: 139.6503 },
         '大阪': { lat: 34.6937, lng: 135.5023 },
         '京都': { lat: 35.0116, lng: 135.7681 },
-        '名古屋': { lat: 35.1815, lng: 136.9066 },
+        '?�古�?: { lat: 35.1815, lng: 136.9066 },
         '福岡': { lat: 33.5904, lng: 130.4017 },
-        '札幌': { lat: 43.0618, lng: 141.3545 },
+        '?��?': { lat: 43.0618, lng: 141.3545 },
         '沖繩': { lat: 26.3344, lng: 127.8056 },
         '神戶': { lat: 34.6901, lng: 135.1956 },
         '橫濱': { lat: 35.4437, lng: 139.6380 },
         '奈良': { lat: 34.6851, lng: 135.8048 },
-        '廣島': { lat: 34.3853, lng: 132.4553 },
+        '�?��': { lat: 34.3853, lng: 132.4553 },
         '仙台': { lat: 38.2682, lng: 140.8694 },
-        '金澤': { lat: 36.5613, lng: 136.6562 },
-        '熊本': { lat: 32.8032, lng: 130.7079 },
-        '長崎': { lat: 32.7503, lng: 129.8777 },
+        '?�澤': { lat: 36.5613, lng: 136.6562 },
+        '?�本': { lat: 32.8032, lng: 130.7079 },
+        '?��?': { lat: 32.7503, lng: 129.8777 },
     },
-    '韓國': {
+    '?��?': {
         '首爾': { lat: 37.5665, lng: 126.9780 },
-        '釜山': { lat: 35.1796, lng: 129.0756 },
-        '濟州': { lat: 33.4996, lng: 126.5312 },
-        '仁川': { lat: 37.4563, lng: 126.7052 },
+        '?�山': { lat: 35.1796, lng: 129.0756 },
+        '濟�?': { lat: 33.4996, lng: 126.5312 },
+        '仁�?': { lat: 37.4563, lng: 126.7052 },
         '大邱': { lat: 35.8714, lng: 128.6014 },
     },
-    '泰國': {
-        '曼谷': { lat: 13.7563, lng: 100.5018 },
-        '清邁': { lat: 18.7883, lng: 98.9853 },
-        '普吉島': { lat: 7.8804, lng: 98.3923 },
-        '芭達雅': { lat: 12.9236, lng: 100.8825 },
+    '泰�?': {
+        '?�谷': { lat: 13.7563, lng: 100.5018 },
+        '清�?': { lat: 18.7883, lng: 98.9853 },
+        '?��?�?: { lat: 7.8804, lng: 98.3923 },
+        '?��???: { lat: 12.9236, lng: 100.8825 },
     },
-    '越南': {
+    '越�?': {
         '河內': { lat: 21.0278, lng: 105.8342 },
-        '胡志明市': { lat: 10.8231, lng: 106.6297 },
+        '?��??��?': { lat: 10.8231, lng: 106.6297 },
         '峴港': { lat: 16.0544, lng: 108.2022 },
     },
-    '新加坡': {
-        '新加坡': { lat: 1.3521, lng: 103.8198 },
+    '?��???: {
+        '?��???: { lat: 1.3521, lng: 103.8198 },
     },
-    '馬來西亞': {
-        '吉隆坡': { lat: 3.1390, lng: 101.6869 },
-        '檳城': { lat: 5.4164, lng: 100.3327 },
+    '馬�?西�?': {
+        '?��???: { lat: 3.1390, lng: 101.6869 },
+        '檳�?': { lat: 5.4164, lng: 100.3327 },
         '沙巴': { lat: 5.9804, lng: 116.0735 },
     },
     '香港': {
         '香港': { lat: 22.3193, lng: 114.1694 },
     },
-    '澳門': {
-        '澳門': { lat: 22.1987, lng: 113.5439 },
+    '澳�?': {
+        '澳�?': { lat: 22.1987, lng: 113.5439 },
     },
-    '美國': {
-        '紐約': { lat: 40.7128, lng: -74.0060 },
-        '洛杉磯': { lat: 34.0522, lng: -118.2437 },
-        '舊金山': { lat: 37.7749, lng: -122.4194 },
-        '拉斯維加斯': { lat: 36.1699, lng: -115.1398 },
+    '美�?': {
+        '紐�?': { lat: 40.7128, lng: -74.0060 },
+        '洛�?�?: { lat: 34.0522, lng: -118.2437 },
+        '?��?�?: { lat: 37.7749, lng: -122.4194 },
+        '?�斯維�???: { lat: 36.1699, lng: -115.1398 },
     },
-    '英國': {
-        '倫敦': { lat: 51.5074, lng: -0.1278 },
+    '?��?': {
+        '?�敦': { lat: 51.5074, lng: -0.1278 },
     },
-    '法國': {
-        '巴黎': { lat: 48.8566, lng: 2.3522 },
+    '法�?': {
+        '巴�?': { lat: 48.8566, lng: 2.3522 },
     },
     '澳洲': {
-        '雪梨': { lat: -33.8688, lng: 151.2093 },
-        '墨爾本': { lat: -37.8136, lng: 144.9631 },
+        '?�梨': { lat: -33.8688, lng: 151.2093 },
+        '墨爾??: { lat: -37.8136, lng: 144.9631 },
     },
 };
 
@@ -2426,13 +2426,13 @@ function initSegments() {
     renderSegmentsList();
     populateCountryDropdown();
 
-    // Country change → update city dropdown
+    // Country change ??update city dropdown
     $('#seg-country').addEventListener('change', () => {
         const country = $('#seg-country').value;
         populateCityDropdown(country);
     });
 
-    // City change → show custom input if "other"
+    // City change ??show custom input if "other"
     $('#seg-city').addEventListener('change', () => {
         const city = $('#seg-city').value;
         $('#seg-city-custom').style.display = city === '__custom__' ? 'block' : 'none';
@@ -2452,7 +2452,7 @@ function initSegments() {
         if (saving) return;
         saving = true;
         $('#seg-save').disabled = true;
-        $('#seg-save').textContent = '儲存中...';
+        $('#seg-save').textContent = '?��?�?..';
 
         const country = $('#seg-country').value;
         let city = $('#seg-city').value;
@@ -2481,10 +2481,10 @@ function initSegments() {
         };
 
         if (!item.name || !item.city) {
-            alert('請至少填寫旅程名稱和城市');
+            alert('請至少填寫�?程�?稱�??��?');
             saving = false;
             $('#seg-save').disabled = false;
-            $('#seg-save').textContent = '儲存';
+            $('#seg-save').textContent = '?��?';
             return;
         }
 
@@ -2492,16 +2492,16 @@ function initSegments() {
         $('#segment-form').style.display = 'none';
         saving = false;
         $('#seg-save').disabled = false;
-        $('#seg-save').textContent = '儲存';
+        $('#seg-save').textContent = '?��?';
     });
 }
 
 function populateCountryDropdown() {
     const select = $('#seg-country');
     if (!select) return;
-    select.innerHTML = '<option value="">選擇國家</option>' +
+    select.innerHTML = '<option value="">?��??�家</option>' +
         COUNTRY_LIST.map(c => `<option value="${c}">${c}</option>`).join('') +
-        '<option value="__custom__">其他（手動輸入）</option>';
+        '<option value="__custom__">?��?（�??�輸?��?</option>';
 }
 
 function populateCityDropdown(country) {
@@ -2510,22 +2510,22 @@ function populateCityDropdown(country) {
     if (!select) return;
 
     if (!country || country === '__custom__') {
-        select.innerHTML = '<option value="">請輸入城市</option><option value="__custom__">手動輸入</option>';
+        select.innerHTML = '<option value="">請輸?��?�?/option><option value="__custom__">?��?輸入</option>';
         select.value = '__custom__';
         customInput.style.display = 'block';
         return;
     }
 
     const cities = getCitiesForCountry(country);
-    select.innerHTML = '<option value="">選擇城市</option>' +
+    select.innerHTML = '<option value="">?��??��?</option>' +
         cities.map(c => `<option value="${c}">${c}</option>`).join('') +
-        '<option value="__custom__">其他（手動輸入）</option>';
+        '<option value="__custom__">?��?（�??�輸?��?</option>';
     customInput.style.display = 'none';
 }
 
 function showSegmentForm(item) {
     $('#segment-form').style.display = 'block';
-    $('#segment-form-title').textContent = item ? '編輯旅途' : '新增旅途';
+    $('#segment-form-title').textContent = item ? '編輯?��? : '?��??��?;
     $('#seg-name').value = item ? item.name : '';
 
     // Set country dropdown
@@ -2572,7 +2572,7 @@ function renderSegmentsList() {
     if (!container) return;
 
     if (segments.length === 0) {
-        container.innerHTML = '<p class="hint">尚未設定旅途資訊，請新增以取得天氣和住宿資料</p>';
+        container.innerHTML = '<p class="hint">尚未設�??�途�?訊�?請新增以?��?天氣?��?宿�???/p>';
         return;
     }
 
@@ -2581,11 +2581,11 @@ function renderSegmentsList() {
             <div class="segment-info">
                 <div class="segment-city">${seg.country ? seg.country + ' · ' : ''}${seg.city}</div>
                 <div class="segment-dates">${formatSegDate(seg.startDate)} ~ ${formatSegDate(seg.endDate)}</div>
-                ${seg.hotelName ? `<div class="segment-hotel">🏨 ${seg.hotelName}</div>` : ''}
+                ${seg.hotelName ? `<div class="segment-hotel">?�� ${seg.hotelName}</div>` : ''}
             </div>
             <div class="sched-actions">
-                <button class="sched-action-btn edit" onclick="editSegment(${idx})">✏️</button>
-                <button class="sched-action-btn delete" onclick="deleteSegmentConfirm(${idx})">🗑️</button>
+                <button class="sched-action-btn edit" onclick="editSegment(${idx})">?��?</button>
+                <button class="sched-action-btn delete" onclick="deleteSegmentConfirm(${idx})">??�?/button>
             </div>
         </div>
     `).join('');
@@ -2597,7 +2597,7 @@ function editSegment(idx) {
 }
 
 async function deleteSegmentConfirm(idx) {
-    if (!confirm(`確定刪除「${segments[idx].name}」？`)) return;
+    if (!confirm(`確�??�除??{segments[idx].name}?��?`)) return;
     await saveSegment('delete', null, idx);
 }
 
@@ -2629,14 +2629,14 @@ async function saveSegment(action, item, idx) {
 
         renderSegmentsList();
         loadTripWeatherBySegments();
-        alert(action === 'delete' ? '✅ 已刪除' : '✅ 已儲存');
+        alert(action === 'delete' ? '??已刪?? : '??已儲�?);
     } catch (err) {
         addToSyncQueue(payload);
         if (action === 'add') segments.push({ ...item, idx: segments.length });
         else if (action === 'update') segments[idx] = { ...segments[idx], ...item };
         else if (action === 'delete') segments.splice(idx, 1);
         renderSegmentsList();
-        alert('⚠️ 已暫存本地（網路恢復後自動同步）');
+        alert('?��? 已暫存本?��?網路?�復後自?��?步�?');
     }
 }
 
@@ -2663,7 +2663,7 @@ async function loadTripWeatherBySegments() {
     });
 
     section.style.display = 'block';
-    container.innerHTML = '<p class="hint">載入天氣中...</p>';
+    container.innerHTML = '<p class="hint">載入天氣�?..</p>';
 
     const allDays = [];
     const rainyDays = [];
@@ -2682,7 +2682,7 @@ async function loadTripWeatherBySegments() {
                 allDays.push({
                     type: 'day',
                     dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
-                    available: false, error: true, errorMsg: `無法查到「${seg.city}」的氣象`
+                    available: false, error: true, errorMsg: `?��??�到??{seg.city}?��?�?��`
                 });
                 currentDate.setDate(currentDate.getDate() + 1);
             }
@@ -2731,8 +2731,8 @@ async function loadTripWeatherBySegments() {
 
     // Rain alert
     if (rainyDays.length > 0) {
-        const rainyList = rainyDays.map(d => `${d.city} ${d.dayLabel}`).join('、');
-        alertEl.textContent = `☔ 提醒：${rainyList} 降雨機率高，記得帶傘！`;
+        const rainyList = rainyDays.map(d => `${d.city} ${d.dayLabel}`).join('??);
+        alertEl.textContent = `???��?�?{rainyList} ?�雨機�?高�?記�?帶�?！`;
         alertEl.style.display = 'block';
     } else {
         alertEl.style.display = 'none';
@@ -2741,12 +2741,12 @@ async function loadTripWeatherBySegments() {
     // Render
     container.innerHTML = allDays.map(day => {
         if (day.type === 'header') {
-            return `<div class="weather-city-header">📍 ${day.city}（${formatSegDate(day.startDate)} ~ ${formatSegDate(day.endDate)}）</div>`;
+            return `<div class="weather-city-header">?? ${day.city}�?{formatSegDate(day.startDate)} ~ ${formatSegDate(day.endDate)}�?/div>`;
         }
         if (!day.available && day.available !== undefined) {
-            return `<div class="weather-day" style="opacity:0.5;"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">⏳</span><span class="weather-temp" style="flex:1;">${day.errorMsg || (day.error ? '載入失敗' : '尚無預報')}</span></div>`;
+            return `<div class="weather-day" style="opacity:0.5;"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">??/span><span class="weather-temp" style="flex:1;">${day.errorMsg || (day.error ? '載入失�?' : '尚無?�報')}</span></div>`;
         }
-        return `<div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">${day.emoji}</span><span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span><span class="weather-rain">降雨 ${day.rain}%</span></div>`;
+        return `<div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">${day.emoji}</span><span class="weather-temp">${day.maxTemp}° / ${day.minTemp}°</span><span class="weather-rain">?�雨 ${day.rain}%</span></div>`;
     }).join('');
 }
 
@@ -2762,11 +2762,11 @@ function initEmergencyFromSegments() {
             currentSegEl.innerHTML = `
                 <div class="segment-card" style="border-left:4px solid var(--primary);margin-bottom:12px;">
                     <div class="segment-info">
-                        <div class="segment-city">目前行程：${currentSeg.name}</div>
-                        <div class="segment-dates">${currentSeg.city}（${formatSegDate(currentSeg.startDate)} ~ ${formatSegDate(currentSeg.endDate)}）</div>
-                        ${currentSeg.hotelName ? `<div class="segment-hotel">🏨 ${currentSeg.hotelName}</div>` : ''}
-                        ${currentSeg.hotelAddress ? `<div class="segment-hotel">📫 ${currentSeg.hotelAddress}</div>` : ''}
-                        ${currentSeg.hotelPhone ? `<div class="segment-hotel">📞 <a href="tel:${currentSeg.hotelPhone}">${currentSeg.hotelPhone}</a></div>` : ''}
+                        <div class="segment-city">?��?行�?�?{currentSeg.name}</div>
+                        <div class="segment-dates">${currentSeg.city}�?{formatSegDate(currentSeg.startDate)} ~ ${formatSegDate(currentSeg.endDate)}�?/div>
+                        ${currentSeg.hotelName ? `<div class="segment-hotel">?�� ${currentSeg.hotelName}</div>` : ''}
+                        ${currentSeg.hotelAddress ? `<div class="segment-hotel">?�� ${currentSeg.hotelAddress}</div>` : ''}
+                        ${currentSeg.hotelPhone ? `<div class="segment-hotel">?? <a href="tel:${currentSeg.hotelPhone}">${currentSeg.hotelPhone}</a></div>` : ''}
                     </div>
                 </div>
             `;
@@ -2774,11 +2774,11 @@ function initEmergencyFromSegments() {
 
         if (allHotelsEl && segments.length > 1) {
             allHotelsEl.innerHTML = `
-                <div class="tool-header" style="font-size:0.85rem;">🏨 所有住宿</div>
+                <div class="tool-header" style="font-size:0.85rem;">?�� ?�?��?�?/div>
                 ${segments.map(s => `
                     <div class="emergency-item" style="flex-direction:column;align-items:flex-start;gap:2px;">
-                        <span style="font-weight:500;">${s.name} · ${s.city}（${formatSegDate(s.startDate)} ~ ${formatSegDate(s.endDate)}）</span>
-                        <span class="emergency-value">${s.hotelName || '未設定'}</span>
+                        <span style="font-weight:500;">${s.name} · ${s.city}�?{formatSegDate(s.startDate)} ~ ${formatSegDate(s.endDate)}�?/span>
+                        <span class="emergency-value">${s.hotelName || '?�設�?}</span>
                         ${s.hotelPhone ? `<a href="tel:${s.hotelPhone}" class="emergency-value">${s.hotelPhone}</a>` : ''}
                     </div>
                 `).join('')}
@@ -2788,10 +2788,10 @@ function initEmergencyFromSegments() {
 }
 
 
-// ==================== 行程管理 ====================
+// ==================== 行�?管�? ====================
 
 let schedManageDate = new Date();
-let editingIndex = null; // null = 新增, number = 編輯第幾列
+let editingIndex = null; // null = ?��?, number = 編輯第幾??
 
 function initScheduleManage() {
     updateSchedDateDisplay();
@@ -2830,12 +2830,12 @@ function initScheduleManage() {
         if (saving) return;
         // Only block save for update/delete during sync, not for add
         if (_isWriting && editingIndex !== null) {
-            alert('⏳ 請等待上一筆同步完成');
+            alert('??請�?待�?一筆�?步�???);
             return;
         }
         saving = true;
         $('#sched-save').disabled = true;
-        $('#sched-save').textContent = '儲存中...';
+        $('#sched-save').textContent = '?��?�?..';
 
         const item = {
             date: $('#sched-date').value,
@@ -2847,10 +2847,10 @@ function initScheduleManage() {
         };
 
         if (!item.date || !item.startTime || !item.place) {
-            alert('請至少填寫日期、開始時間和地點');
+            alert('請至少填寫日?�、�?始�??��??��?');
             saving = false;
             $('#sched-save').disabled = false;
-            $('#sched-save').textContent = '儲存';
+            $('#sched-save').textContent = '?��?';
             return;
         }
 
@@ -2863,7 +2863,7 @@ function initScheduleManage() {
         $('#schedule-form').style.display = 'none';
         saving = false;
         $('#sched-save').disabled = false;
-        $('#sched-save').textContent = '儲存';
+        $('#sched-save').textContent = '?��?';
     });
 
     // Show sync queue status
@@ -2893,7 +2893,7 @@ function renderScheduleEditList() {
     });
 
     if (daySchedule.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="emoji">📭</div><p>這天沒有行程</p></div>';
+        container.innerHTML = '<div class="empty-state"><div class="emoji">?��</div><p>?�天沒�?行�?</p></div>';
         return;
     }
 
@@ -2904,9 +2904,9 @@ function renderScheduleEditList() {
                 <div class="sched-place">${item.place}</div>
             </div>
             <div class="sched-actions">
-                ${item._pending ? '<span class="hint">同步中...</span>' : `
-                <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">✏️</button>
-                <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">🗑️</button>
+                ${item._pending ? '<span class="hint">?�步�?..</span>' : `
+                <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">?��?</button>
+                <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">??�?/button>
                 `}
             </div>
         </div>
@@ -2915,7 +2915,7 @@ function renderScheduleEditList() {
 
 function showScheduleForm(item) {
     $('#schedule-form').style.display = 'block';
-    $('#schedule-form-title').textContent = item ? '編輯行程' : '新增行程';
+    $('#schedule-form-title').textContent = item ? '編輯行�?' : '?��?行�?';
 
     const dateStr = `${schedManageDate.getFullYear()}-${String(schedManageDate.getMonth()+1).padStart(2,'0')}-${String(schedManageDate.getDate()).padStart(2,'0')}`;
     $('#sched-date').value = item ? toInputDate(item.date.replace(/\//g, '-')) : dateStr;
@@ -2933,11 +2933,11 @@ function editScheduleItem(idx) {
 
 async function deleteScheduleItemConfirm(idx) {
     if (_isWriting) {
-        alert('⏳ 請等待上一筆同步完成');
+        alert('??請�?待�?一筆�?步�???);
         return;
     }
     const item = scheduleData[idx];
-    if (!confirm(`確定刪除「${item.place}」？`)) return;
+    if (!confirm(`確�??�除??{item.place}?��?`)) return;
 
     await saveScheduleItem('delete', null, idx);
 }
@@ -2995,13 +2995,13 @@ async function saveScheduleItem(action, item, idx) {
             if (result.error) {
                 addToSyncQueue(payload);
                 showSyncStatus();
-                alert('⚠️ 新增寫入失敗：' + result.error);
+                alert('?��? ?��?寫入失�?�? + result.error);
             }
             silentLoadData();
         }).catch(err => {
             addToSyncQueue(payload);
             showSyncStatus();
-            alert('⚠️ 網路異常，已暫存本地');
+            alert('?��? 網路?�常，已?��??�地');
         });
     } else {
         // Update/Delete need queue to prevent row conflicts
@@ -3026,10 +3026,10 @@ function queueServerWrite(payload, action) {
             let result = {};
             try { result = await res.json(); } catch (e) { result = { success: true }; }
             if (result.error) {
-                console.error('背景寫入失敗:', result.error);
+                console.error('?�景寫入失�?:', result.error);
                 addToSyncQueue(payload);
                 showSyncStatus();
-                alert('⚠️ 寫入 Sheet 失敗：' + result.error + '\n資料已暫存');
+                alert('?��? 寫入 Sheet 失�?�? + result.error + '\n資�?已暫�?);
             } else if (action === 'delete') {
                 // After delete, refresh to get correct uuid mapping
                 return silentLoadData();
@@ -3039,10 +3039,10 @@ function queueServerWrite(payload, action) {
                 return silentLoadData();
             }
         }).catch(err => {
-            console.error('背景寫入失敗:', err);
+            console.error('?�景寫入失�?:', err);
             addToSyncQueue(payload);
             showSyncStatus();
-            alert('⚠️ 網路異常，資料已暫存本地');
+            alert('?��? 網路?�常，�??�已?��??�地');
         }).finally(() => {
             _isWriting = false;
         });
@@ -3067,7 +3067,7 @@ function showSyncStatus() {
     const queue = getSyncQueue();
     if (queue.length > 0) {
         el.style.display = 'block';
-        el.textContent = `⚠️ ${queue.length} 筆待同步`;
+        el.textContent = `?��? ${queue.length} 筆�??�步`;
         if (actionsEl) actionsEl.style.display = 'block';
     } else {
         el.style.display = 'none';
@@ -3076,26 +3076,26 @@ function showSyncStatus() {
 }
 
 function clearSyncQueue() {
-    if (!confirm('確定清除所有待同步項目？（這些操作將不會被同步到 Google Sheets）')) return;
+    if (!confirm('確�?清除?�?��??�步?�目？�??��??��?將�??�被?�步??Google Sheets�?)) return;
     localStorage.setItem('syncQueue', '[]');
     showSyncStatus();
-    alert('✅ 已清除');
+    alert('??已�???);
 }
 
 async function retrySyncQueue() {
     const queue = getSyncQueue();
     if (queue.length === 0) {
-        alert('沒有待同步的項目');
+        alert('沒�?待�?步�??�目');
         return;
     }
-    alert(`開始同步 ${queue.length} 筆...`);
+    alert(`?��??�步 ${queue.length} �?..`);
     await processSyncQueue();
     const remaining = getSyncQueue();
     if (remaining.length === 0) {
-        alert('✅ 全部同步成功！');
+        alert('???�部?�步?��?�?);
         silentLoadData();
     } else {
-        alert(`⚠️ 還有 ${remaining.length} 筆同步失敗`);
+        alert(`?��? ?��? ${remaining.length} 筆�?步失?�`);
     }
     showSyncStatus();
 }
@@ -3130,7 +3130,7 @@ async function processSyncQueue() {
 }
 
 
-// ==================== AI 助手 (Gemini via Apps Script Proxy) ====================
+// ==================== AI ?��? (Gemini via Apps Script Proxy) ====================
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_MODEL_FALLBACK = 'gemini-2.5-flash';
@@ -3173,10 +3173,10 @@ function initAI() {
     const header = $('.app-header h1');
     header.addEventListener('touchstart', () => {
         pressTimer = setTimeout(() => {
-            const key = prompt('設定 Gemini API Key：', localStorage.getItem('geminiApiKey') || '');
+            const key = prompt('設�? Gemini API Key�?, localStorage.getItem('geminiApiKey') || '');
             if (key !== null) {
                 localStorage.setItem('geminiApiKey', key.trim());
-                alert('API Key 已更新！');
+                alert('API Key 已更?��?');
             }
         }, 2000);
     });
@@ -3190,7 +3190,7 @@ let isRecording = false;
 
 function toggleVoiceInput() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('你的瀏覽器不支援語音輸入');
+        alert('你�??�覽?��??�援語音輸入');
         return;
     }
 
@@ -3211,7 +3211,7 @@ function toggleVoiceInput() {
     recognition.onstart = () => {
         isRecording = true;
         voiceBtn.classList.add('recording');
-        input.placeholder = '🎙️ 正在聽...';
+        input.placeholder = '??�?�?��??..';
     };
 
     recognition.onresult = (event) => {
@@ -3246,7 +3246,7 @@ function stopVoiceInput() {
     isRecording = false;
     const voiceBtn = $('#ai-voice');
     voiceBtn.classList.remove('recording');
-    $('#ai-input').placeholder = '打字或拍照翻譯...';
+    $('#ai-input').placeholder = '?��??��??�翻�?..';
     if (recognition) {
         recognition.stop();
         recognition = null;
@@ -3271,29 +3271,29 @@ function handleQuickAction(action) {
 function triggerFoodRecommendation() {
     const now = new Date();
     const hour = now.getHours();
-    let mealType = '吃的';
-    if (hour < 10) mealType = '早餐';
-    else if (hour < 14) mealType = '午餐';
-    else if (hour < 17) mealType = '下午茶或點心';
-    else mealType = '晚餐';
+    let mealType = '?��?';
+    if (hour < 10) mealType = '?��?';
+    else if (hour < 14) mealType = '?��?';
+    else if (hour < 17) mealType = '下�??��?點�?';
+    else mealType = '?��?';
 
-    let msg = `現在${hour}點了，我想吃${mealType}。`;
+    let msg = `?�在${hour}點�?，�??��?${mealType}?�`;
     if (currentPosition) {
-        msg += `我目前在 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)} 附近。`;
+        msg += `?�目?�在 ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)} ?��??�`;
     }
-    msg += '根據我的美食清單，推薦我現在可以去哪家？考慮營業時間和距離。';
+    msg += '?��??��?美�?清單，推?��??�在?�以?�哪家�??�慮?�業?��??��??��?;
 
     $('#ai-input').value = msg;
     sendAIMessage();
 }
 
 function triggerTranslateMode() {
-    const text = prompt('輸入你要翻譯的中文：\n（會翻成日文，大字顯示給店員看）');
+    const text = prompt('輸入你�?翻譯?�中?��?\n（�?翻�??��?，大字顯示給店員?��?');
     if (!text || !text.trim()) return;
 
     // Check API key
     if (!localStorage.getItem('geminiApiKey')) {
-        const key = prompt('首次使用請輸入 Gemini API Key：\n（到 https://aistudio.google.com/apikey 免費申請）');
+        const key = prompt('首次使用請輸??Gemini API Key：\n（到 https://aistudio.google.com/apikey ?�費?��?�?);
         if (key && key.trim()) {
             localStorage.setItem('geminiApiKey', key.trim());
         } else {
@@ -3301,25 +3301,25 @@ function triggerTranslateMode() {
         }
     }
 
-    appendAIMessage(`🎌 翻譯：${text}`, 'user');
-    const loadingEl = appendAIMessage('翻譯中...', 'bot loading');
+    appendAIMessage(`?? 翻譯�?{text}`, 'user');
+    const loadingEl = appendAIMessage('翻譯�?..', 'bot loading');
 
     callGeminiTranslate(text.trim()).then(result => {
         loadingEl.remove();
         // Show translation in big readable format with speak button
         const speakId = 'speak-' + Date.now();
         const html = `
-            <div class="translation-label">🇹🇼 中文</div>
+            <div class="translation-label">?��?�� 中�?</div>
             <p>${text}</p>
             <div class="translation-block">
-                <div class="translation-label">🇯🇵 日文 <button class="speak-btn" onclick="speakJapanese('${speakId}')">🔊 播放</button></div>
+                <div class="translation-label">?��?�� ?��? <button class="speak-btn" onclick="speakJapanese('${speakId}')">?? ?�放</button></div>
                 <span id="${speakId}">${result}</span>
             </div>
         `;
         appendAIMessageRaw(html, 'bot');
     }).catch(err => {
         loadingEl.remove();
-        appendAIMessage(`❌ 翻譯失敗：${err.message}`, 'bot');
+        appendAIMessage(`??翻譯失�?�?{err.message}`, 'bot');
     });
 }
 
@@ -3335,7 +3335,7 @@ async function callGeminiTranslate(text) {
     const requestBody = {
         contents: [{
             role: 'user',
-            parts: [{ text: `請把以下中文翻譯成日文。只回覆日文翻譯結果，不要加其他說明。如果是對話場景，提供最自然的日文說法。\n\n${text}` }]
+            parts: [{ text: `請�?以�?中�?翻譯?�日?�。只?��??��?翻譯結�?，�?要�??��?說�??��??�是對話?�景，�?供�??�然?�日?�說法。\n\n${text}` }]
         }],
         generationConfig: {
             temperature: 0.3,
@@ -3350,10 +3350,10 @@ async function callGeminiTranslate(text) {
     }
 
     if (!data || data.error) {
-        throw new Error(data?.error?.message || '翻譯失敗');
+        throw new Error(data?.error?.message || '翻譯失�?');
     }
 
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '翻譯失敗';
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '翻譯失�?';
 }
 
 // --- Text to Speech (Japanese) ---
@@ -3365,7 +3365,7 @@ function speakJapanese(elementId) {
     if (!text) return;
 
     if (!('speechSynthesis' in window)) {
-        alert('你的瀏覽器不支援語音播放');
+        alert('你�??�覽?��??�援語音?�放');
         return;
     }
 
@@ -3391,7 +3391,7 @@ async function sendAIMessage() {
 
     // Check API key
     if (!localStorage.getItem('geminiApiKey')) {
-        const key = prompt('首次使用請輸入 Gemini API Key：\n（到 https://aistudio.google.com/apikey 免費申請）');
+        const key = prompt('首次使用請輸??Gemini API Key：\n（到 https://aistudio.google.com/apikey ?�費?��?�?);
         if (key && key.trim()) {
             localStorage.setItem('geminiApiKey', key.trim());
         } else {
@@ -3404,7 +3404,7 @@ async function sendAIMessage() {
     input.value = '';
 
     // Show loading
-    const loadingEl = appendAIMessage('思考中...', 'bot loading');
+    const loadingEl = appendAIMessage('?�考中...', 'bot loading');
 
     try {
         const response = await callGemini(message);
@@ -3412,7 +3412,7 @@ async function sendAIMessage() {
         appendAIMessage(response, 'bot');
     } catch (err) {
         loadingEl.remove();
-        appendAIMessage(`❌ 發生錯誤：${err.message}`, 'bot');
+        appendAIMessage(`???��??�誤�?{err.message}`, 'bot');
         console.error('Gemini API error:', err);
     }
 }
@@ -3443,25 +3443,25 @@ function buildSystemContext() {
     // Determine current segment
     const currentSeg = getCurrentSegment();
 
-    let context = `你是一個旅遊行程助手。現在的時間是 ${today} ${currentTime}。`;
+    let context = `你是一?��??��?程助?�。現?��??��???${today} ${currentTime}?�`;
 
     if (currentSeg) {
-        context += `\n目前所在段落：${currentSeg.country} ${currentSeg.city}（${currentSeg.startDate} ~ ${currentSeg.endDate}）`;
+        context += `\n?��??�?�段?��?${currentSeg.country} ${currentSeg.city}�?{currentSeg.startDate} ~ ${currentSeg.endDate}）`;
         if (currentSeg.hotelName) {
-            context += `\n住宿：${currentSeg.hotelName}（${currentSeg.hotelAddress}）`;
+            context += `\n住宿�?{currentSeg.hotelName}�?{currentSeg.hotelAddress}）`;
         }
     }
 
     if (currentPosition) {
-        context += `\n使用者 GPS 位置：${currentPosition.lat.toFixed(5)}, ${currentPosition.lng.toFixed(5)}`;
+        context += `\n使用??GPS 位置�?{currentPosition.lat.toFixed(5)}, ${currentPosition.lng.toFixed(5)}`;
     }
 
     // Today's schedule only
     const todaySchedule = scheduleData.filter(item => normalizeDate(item.date) === today);
     if (todaySchedule.length > 0) {
-        context += '\n\n【今天的行程】\n';
+        context += '\n\n?��?天�?行�??�\n';
         todaySchedule.forEach(item => {
-            context += `- ${item.startTime}~${item.endTime} ${item.place}（${item.address}）${item.notes ? '備註：' + item.notes : ''}\n`;
+            context += `- ${item.startTime}~${item.endTime} ${item.place}�?{item.address}�?{item.notes ? '?�註�? + item.notes : ''}\n`;
         });
     }
 
@@ -3471,9 +3471,9 @@ function buildSystemContext() {
     const tomorrowStr = formatDate(tomorrow);
     const tomorrowSchedule = scheduleData.filter(item => normalizeDate(item.date) === tomorrowStr);
     if (tomorrowSchedule.length > 0) {
-        context += '\n\n【明天的行程】\n';
+        context += '\n\n?��?天�?行�??�\n';
         tomorrowSchedule.forEach(item => {
-            context += `- ${item.startTime}~${item.endTime} ${item.place}（${item.address}）${item.notes ? '備註：' + item.notes : ''}\n`;
+            context += `- ${item.startTime}~${item.endTime} ${item.place}�?{item.address}�?{item.notes ? '?�註�? + item.notes : ''}\n`;
         });
     }
 
@@ -3491,12 +3491,12 @@ function buildSystemContext() {
             }
         }
         relevantFood = relevantFood.slice(0, 30);
-        context += '\n\n【美食清單】\n';
+        context += '\n\n?��?食�??�】\n';
         relevantFood.forEach(item => {
-            context += `- ${item.name}（${item.address || ''}）${item.type || ''}${item.recommend ? ' 推薦：' + item.recommend : ''}\n`;
+            context += `- ${item.name}�?{item.address || ''}�?{item.type || ''}${item.recommend ? ' ?�薦�? + item.recommend : ''}\n`;
         });
         if (relevantFood.length < foodList.length) {
-            context += `（僅列出${currentSeg ? currentSeg.city : ''}相關 ${relevantFood.length} 家，共 ${foodList.length} 家）\n`;
+            context += `（�??�出${currentSeg ? currentSeg.city : ''}?��? ${relevantFood.length} 家�???${foodList.length} 家�?\n`;
         }
     }
 
@@ -3508,13 +3508,13 @@ function buildSystemContext() {
             if (cityPlaces.length > 0) relevantPlaces = cityPlaces;
         }
         relevantPlaces = relevantPlaces.slice(0, 20);
-        context += '\n\n【景點清單】\n';
+        context += '\n\n?�景點�??�】\n';
         relevantPlaces.forEach(item => {
-            context += `- ${item.place}（${item.address || ''}）${item.type || ''}\n`;
+            context += `- ${item.place}�?{item.address || ''}�?{item.type || ''}\n`;
         });
     }
 
-    context += '\n\n請用繁體中文回答。根據以上資料回答問題，提供具體建議。回答簡潔實用。';
+    context += '\n\n請用繁�?中�??��??�根?�以上�??��?答�?題�??��??��?建議?��?答簡潔實?��?;
 
     return context;
 }
@@ -3543,16 +3543,16 @@ async function callGemini(userMessage) {
 
     if (!data || data.error) {
         firstError = typeof data?.error === 'string' ? data.error : (data?.error?.message || 'Unknown error');
-        console.log(`${GEMINI_MODEL} 失敗(${firstError})，切換備援 ${GEMINI_MODEL_FALLBACK}`);
+        console.log(`${GEMINI_MODEL} 失�?(${firstError})，�??��???${GEMINI_MODEL_FALLBACK}`);
         data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
     if (!data || data.error) {
         const secondError = typeof data?.error === 'string' ? data.error : (data?.error?.message || '');
-        throw new Error(firstError || secondError || '呼叫 Gemini 失敗');
+        throw new Error(firstError || secondError || '?�叫 Gemini 失�?');
     }
 
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我無法回答這個問題。';
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '?��?，�??��??��??�個�?題�?;
 
     // Add AI response to history
     aiChatHistory.push({ role: 'model', parts: [{ text: aiResponse }] });
@@ -3567,7 +3567,7 @@ async function callGemini(userMessage) {
 
 async function callGeminiProxy(requestBody, model) {
     const apiKey = localStorage.getItem('geminiApiKey') || '';
-    if (!apiKey) throw new Error('未設定 API Key');
+    if (!apiKey) throw new Error('?�設�?API Key');
 
     const m = model || GEMINI_MODEL;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
@@ -3590,7 +3590,7 @@ async function callGeminiProxy(requestBody, model) {
 async function handleImageUpload(file) {
     // Check API key
     if (!localStorage.getItem('geminiApiKey')) {
-        const key = prompt('首次使用請輸入 Gemini API Key：\n（到 https://aistudio.google.com/apikey 免費申請）');
+        const key = prompt('首次使用請輸??Gemini API Key：\n（到 https://aistudio.google.com/apikey ?�費?��?�?);
         if (key && key.trim()) {
             localStorage.setItem('geminiApiKey', key.trim());
         } else {
@@ -3606,14 +3606,14 @@ async function handleImageUpload(file) {
     const mode = window._aiImageMode || 'translate';
     window._aiImageMode = null;
 
-    const modeLabel = mode === 'identify' ? '🏯 辨識這個地方' : '📷 翻譯這張圖片';
+    const modeLabel = mode === 'identify' ? '?�� 辨�??�個地?? : '?�� 翻譯?�張?��?';
 
     // Show image in chat
     const imgHtml = `<img src="data:${mimeType};base64,${base64}" alt="uploaded image">`;
-    appendAIMessageRaw(`${modeLabel}：${imgHtml}`, 'user');
+    appendAIMessageRaw(`${modeLabel}�?{imgHtml}`, 'user');
 
     // Show loading
-    const loadingEl = appendAIMessage(mode === 'identify' ? '辨識中...' : '翻譯中...', 'bot loading');
+    const loadingEl = appendAIMessage(mode === 'identify' ? '辨�?�?..' : '翻譯�?..', 'bot loading');
 
     try {
         const response = await callGeminiWithImage(base64, mimeType, mode);
@@ -3621,7 +3621,7 @@ async function handleImageUpload(file) {
         appendAIMessage(response, 'bot');
     } catch (err) {
         loadingEl.remove();
-        appendAIMessage(`❌ 發生錯誤：${err.message}`, 'bot');
+        appendAIMessage(`???��??�誤�?{err.message}`, 'bot');
         console.error('Gemini image error:', err);
     }
 }
@@ -3651,9 +3651,9 @@ function appendAIMessageRaw(html, type) {
 async function callGeminiWithImage(base64, mimeType, mode) {
     let prompt;
     if (mode === 'identify') {
-        prompt = '請辨識這張照片中的建築物、神社、寺廟、地標或景點。告訴我這是什麼地方、它的歷史背景和有趣的資訊。用繁體中文回答，格式清楚易讀。';
+        prompt = '請辨識這張?��?中�?建�??�、�?社、寺廟、地標�??��??��?訴�??�是什麼地?�、�??�歷?��??��??�趣?��?訊。用繁�?中�??��?，格式�?楚�?讀??;
     } else {
-        prompt = '請翻譯這張圖片中的所有日文/外文文字成繁體中文。如果是菜單，請列出每道菜的名稱和中文翻譯。如果是路標或指示牌，請說明內容。格式清楚易讀。';
+        prompt = '請翻譯這張?��?中�??�?�日??外�??��??��?體中?�。�??�是?�單，�??�出每�??��??�稱?�中?�翻譯。�??�是路�??��?示�?，�?說�??�容?�格式�?楚�?讀??;
     }
 
     const requestBody = {
@@ -3678,13 +3678,13 @@ async function callGeminiWithImage(base64, mimeType, mode) {
     let data = await callGeminiProxy(requestBody, GEMINI_MODEL);
 
     if (!data || data.error) {
-        console.log(`圖片處理：${GEMINI_MODEL} 失敗，切換備援 ${GEMINI_MODEL_FALLBACK}`);
+        console.log(`?��??��?�?{GEMINI_MODEL} 失�?，�??��???${GEMINI_MODEL_FALLBACK}`);
         data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
     if (!data || data.error) {
-        throw new Error(data?.error?.message || '圖片處理失敗');
+        throw new Error(data?.error?.message || '?��??��?失�?');
     }
 
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，無法辨識圖片內容。';
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '?��?，無法辨識�??�內容�?;
 }

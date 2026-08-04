@@ -1708,11 +1708,24 @@ function renderShoppingList() {
     container.innerHTML = shoppingItems.map((item, idx) => {
         const isChecked = checked.includes(idx);
         const isMarkedDelete = shoppingDeleteMarked.includes(idx);
+        const isEditing = shoppingEditingIdx === idx;
+
+        if (isEditing) {
+            return `
+                <div class="packing-item editing">
+                    <input type="text" class="edit-name" value="${item.item}" style="flex:2;padding:6px;border:1px solid var(--primary);border-radius:4px;">
+                    <input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:4px;">
+                    <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditShopping(${idx})">✓</button>
+                </div>
+            `;
+        }
+
         return `
             <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="toggleShopping(${idx})">
                 <div class="check">${isChecked ? '✓' : ''}</div>
                 <span class="packing-name">${item.item}</span>
                 ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
+                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditShopping(${idx})">✏️</button>
                 <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markShoppingDelete(${idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
             </div>
         `;
@@ -1727,6 +1740,7 @@ function renderShoppingList() {
 }
 
 let shoppingDeleteMarked = [];
+let shoppingEditingIdx = null;
 
 function markShoppingDelete(idx) {
     if (shoppingDeleteMarked.includes(idx)) {
@@ -1735,6 +1749,43 @@ function markShoppingDelete(idx) {
         shoppingDeleteMarked.push(idx);
     }
     renderShoppingList();
+}
+
+function startEditShopping(idx) {
+    shoppingEditingIdx = idx;
+    renderShoppingList();
+}
+
+function confirmEditShopping(idx) {
+    const container = $('#shopping-list');
+    const rows = container.querySelectorAll('.packing-item');
+    const row = rows[idx];
+    const name = row.querySelector('.edit-name').value.trim();
+    const cat = row.querySelector('.edit-cat').value.trim();
+
+    if (!name) {
+        alert('物品名稱不能為空');
+        return;
+    }
+
+    shoppingItems[idx].item = name;
+    shoppingItems[idx].category = cat;
+    shoppingEditingIdx = null;
+    renderShoppingList();
+
+    // Background update
+    const uuid = shoppingItems[idx]._uuid || '';
+    if (uuid) {
+        const payload = {
+            action: 'updateShoppingItem',
+            sheetId: window.SHEET_ID,
+            user: currentUser,
+            password: getUserPassword(),
+            uuid: uuid,
+            item: { item: name, category: cat }
+        };
+        queueServerWrite(payload, 'update');
+    }
 }
 
 function initConfirmDeleteShopping() {
@@ -1875,11 +1926,24 @@ function renderPackingList() {
     container.innerHTML = packingItems.map((item, idx) => {
         const isChecked = checked.includes(item.id !== undefined ? item.id : idx);
         const isMarkedDelete = packingDeleteMarked.includes(idx);
+        const isEditing = packingEditingIdx === idx;
+
+        if (isEditing) {
+            return `
+                <div class="packing-item editing">
+                    <input type="text" class="edit-name" value="${item.item}" style="flex:2;padding:6px;border:1px solid var(--primary);border-radius:4px;">
+                    <input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:4px;">
+                    <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditPacking(${idx})">✓</button>
+                </div>
+            `;
+        }
+
         return `
             <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="togglePacking(${item.id !== undefined ? item.id : idx})">
                 <div class="check">${isChecked ? '✓' : ''}</div>
                 <span class="packing-name">${item.item}</span>
                 ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
+                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditPacking(${idx})">✏️</button>
                 <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markPackingDelete(${idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
             </div>
         `;
@@ -1895,6 +1959,7 @@ function renderPackingList() {
 }
 
 let packingDeleteMarked = [];
+let packingEditingIdx = null;
 
 function markPackingDelete(idx) {
     if (packingDeleteMarked.includes(idx)) {
@@ -1903,6 +1968,42 @@ function markPackingDelete(idx) {
         packingDeleteMarked.push(idx);
     }
     renderPackingList();
+}
+
+function startEditPacking(idx) {
+    packingEditingIdx = idx;
+    renderPackingList();
+}
+
+function confirmEditPacking(idx) {
+    const container = $('#packing-list');
+    const row = container.querySelectorAll('.packing-item')[idx];
+    const name = row.querySelector('.edit-name').value.trim();
+    const cat = row.querySelector('.edit-cat').value.trim();
+
+    if (!name) {
+        alert('物品名稱不能為空');
+        return;
+    }
+
+    packingItems[idx].item = name;
+    packingItems[idx].category = cat;
+    packingEditingIdx = null;
+    renderPackingList();
+
+    // Background update
+    const uuid = packingItems[idx]._uuid || '';
+    if (uuid) {
+        const payload = {
+            action: 'updatePackingItem',
+            sheetId: window.SHEET_ID,
+            user: currentUser,
+            password: getUserPassword(),
+            uuid: uuid,
+            item: { item: name, category: cat }
+        };
+        queueServerWrite(payload, 'update');
+    }
 }
 
 function initConfirmDeletePacking() {

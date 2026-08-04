@@ -1711,9 +1711,9 @@ function renderShoppingList() {
         return `
             <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="toggleShopping(${idx})">
                 <div class="check">${isChecked ? '✓' : ''}</div>
-                <span>${item.item}</span>
-                ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
-                <button class="sched-action-btn delete" onclick="event.stopPropagation();markShoppingDelete(${idx})" style="margin-left:8px;">${isMarkedDelete ? '↩' : '🗑️'}</button>
+                <span class="packing-name">${item.item}</span>
+                ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
+                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markShoppingDelete(${idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
             </div>
         `;
     }).join('');
@@ -1742,7 +1742,6 @@ function initConfirmDeleteShopping() {
     if (btn) {
         btn.addEventListener('click', async () => {
             if (shoppingDeleteMarked.length === 0) return;
-            if (!confirm(`確定刪除 ${shoppingDeleteMarked.length} 個物品？`)) return;
 
             btn.disabled = true;
             btn.textContent = '刪除中...';
@@ -1879,9 +1878,9 @@ function renderPackingList() {
         return `
             <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="togglePacking(${item.id !== undefined ? item.id : idx})">
                 <div class="check">${isChecked ? '✓' : ''}</div>
-                <span>${item.item}</span>
-                ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
-                <button class="sched-action-btn delete" onclick="event.stopPropagation();markPackingDelete(${idx})" style="margin-left:8px;">${isMarkedDelete ? '↩' : '🗑️'}</button>
+                <span class="packing-name">${item.item}</span>
+                ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
+                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markPackingDelete(${idx})">${isMarkedDelete ? '↩' : '🗑️'}</button>
             </div>
         `;
     }).join('');
@@ -1911,7 +1910,6 @@ function initConfirmDeletePacking() {
     if (btn) {
         btn.addEventListener('click', async () => {
             if (packingDeleteMarked.length === 0) return;
-            if (!confirm(`確定刪除 ${packingDeleteMarked.length} 個物品？`)) return;
 
             btn.disabled = true;
             btn.textContent = '刪除中...';
@@ -1949,83 +1947,6 @@ function togglePacking(id) {
     }
     localStorage.setItem('packingChecked', JSON.stringify(checked));
     renderPackingList();
-}
-
-function editPackingItem(id) {
-    editingPackingIndex = id;
-    showPackingForm(packingItems[id]);
-}
-
-async function deletePackingItemConfirm(id) {
-    const item = packingItems[id];
-    if (!confirm(`確定刪除「${item.item}」？`)) return;
-    await savePackingItem('delete', null, id);
-}
-
-async function savePackingItem(action, item, idx) {
-    const sheetId = window.SHEET_ID;
-    const uuid = (action !== 'add' && packingItems[idx]) ? (packingItems[idx]._uuid || '') : '';
-
-    const payload = {
-        action: action === 'add' ? 'addPackingItem' :
-                action === 'update' ? 'updatePackingItem' : 'deletePackingItem',
-        sheetId: sheetId,
-        user: currentUser,
-        password: getUserPassword(),
-        uuid: uuid,
-        item: item
-    };
-
-    try {
-        const res = await fetch(CONFIG_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(payload),
-            redirect: 'follow'
-        });
-
-        if (!res.ok && res.status !== 0) {
-            let errMsg = `HTTP ${res.status}`;
-            try { const d = await res.json(); errMsg = d.error || errMsg; } catch (e) {}
-            throw new Error(errMsg);
-        }
-
-        let result = { success: true };
-        try { result = await res.json(); } catch (e) {}
-        if (result.error) throw new Error(result.error);
-
-        // Update local data
-        if (action === 'add') {
-            packingItems.push({ id: packingItems.length, item: item.item, category: item.category });
-        } else if (action === 'update') {
-            packingItems[idx] = { ...packingItems[idx], ...item };
-        } else if (action === 'delete') {
-            packingItems.splice(idx, 1);
-            // Re-index
-            packingItems.forEach((p, i) => p.id = i);
-            // Clean checked
-            localStorage.setItem('packingChecked', JSON.stringify([]));
-        }
-
-        renderPackingList();
-        alert(action === 'delete' ? '✅ 已刪除' : '✅ 已儲存');
-
-    } catch (err) {
-        console.error('行李清單儲存失敗:', err);
-        addToSyncQueue(payload);
-
-        if (action === 'add') {
-            packingItems.push({ id: packingItems.length, item: item.item, category: item.category });
-        } else if (action === 'update') {
-            packingItems[idx] = { ...packingItems[idx], ...item };
-        } else if (action === 'delete') {
-            packingItems.splice(idx, 1);
-            packingItems.forEach((p, i) => p.id = i);
-        }
-
-        renderPackingList();
-        alert('⚠️ 已暫存本地（網路恢復後自動同步）');
-    }
 }
 
 function updatePackingProgress(done, total) {

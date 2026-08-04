@@ -1,4 +1,4 @@
-// ==================== ?…é??©æ? PWA ====================
+// ==================== ?ï¿½ï¿½??ï¿½ï¿½? PWA ====================
 
 // --- State ---
 let scheduleData = [];
@@ -185,7 +185,7 @@ function initLocation() {
                 }
             },
             (err) => {
-                $('#current-location').textContent = '?? ?¡æ??–å?ä½ç½®ï¼ˆè??‹å?å®šä?æ¬Šé?ï¼?;
+                $('#current-location').textContent = '?? ?ï¿½ï¿½??ï¿½ï¿½?ä½ç½®ï¼ˆï¿½??ï¿½ï¿½?å®šï¿½?æ¬Šï¿½?ï¿½?;
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -203,15 +203,15 @@ async function reverseGeocode(lat, lng) {
             currentLocationName = country ? `${city}, ${country}` : city;
             $('#current-location').textContent = `?? ${currentLocationName}`;
         } else {
-            $('#current-location').textContent = '?? ?®å?ä½ç½®å·²å?å¾?;
+            $('#current-location').textContent = '?? ?ï¿½ï¿½?ä½ç½®å·²ï¿½?ï¿½?;
         }
     } catch (e) {
-        $('#current-location').textContent = '?? ?®å?ä½ç½®å·²å?å¾?;
+        $('#current-location').textContent = '?? ?ï¿½ï¿½?ä½ç½®å·²ï¿½?ï¿½?;
     }
 }
 
 // --- Settings (loaded from Apps Script) ---
-const CONFIG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQcoVLDmpAtDc-M8WWac5zMgrNgbOO_Aoupthms1nCfFvhKjIP4AKO5F8EP2wT4AI-/exec';
+const CONFIG_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQcoVLDmpAtDc-M8WWac5zMgrNgbOO_Aoupthms1nCfFvhKjlP4AKO5F8EP2wT4AI-/exec';
 let currentUser = null;    
 
 function getUserPassword() {
@@ -251,7 +251,7 @@ async function loadUserList() {
         const data = await res.json();
 
         if (!data.users || data.users.length === 0) {
-            container.innerHTML = '<p class="hint">å°šæœªè¨­å?ä»»ä??¨æˆ¶</p>';
+            container.innerHTML = '<p class="hint">å°šæœªè¨­ï¿½?ä»»ï¿½??ï¿½æˆ¶</p>';
             return;
         }
 
@@ -259,13 +259,13 @@ async function loadUserList() {
             <button class="user-btn" onclick="selectUser('${name.replace(/'/g, "\\'")}')">${name}</button>
         `).join('');
     } catch (err) {
-        container.innerHTML = '<p class="hint">???¡æ?è¼‰å…¥?¨æˆ¶?—è¡¨ï¼Œè?æª¢æŸ¥ Apps Script ???</p>';
+        container.innerHTML = '<p class="hint">???ï¿½ï¿½?è¼‰å…¥?ï¿½æˆ¶?ï¿½è¡¨ï¼Œï¿½?æª¢æŸ¥ Apps Script ???</p>';
         console.error('Load users failed:', err);
     }
 }
 
 async function selectUser(name) {
-    const password = prompt(`è«‹è¼¸??${name} ?„å?ç¢¼ï?`);
+    const password = prompt(`è«‹è¼¸??${name} ?ï¿½ï¿½?ç¢¼ï¿½?`);
     if (password === null) return; // User cancelled
 
     showLoading(true);
@@ -274,7 +274,7 @@ async function selectUser(name) {
         const config = await res.json();
 
         if (config.error) {
-            alert('?»å…¥å¤±æ?ï¼? + config.error);
+            alert('?ï¿½å…¥å¤±ï¿½?ï¿½? + config.error);
             showLoading(false);
             return;
         }
@@ -292,7 +292,7 @@ async function selectUser(name) {
         // Load data in background (won't block UI)
         loadData();
     } catch (err) {
-        alert('è®€?–è¨­å®šå¤±?—ï?' + err.message);
+        alert('è®€?ï¿½è¨­å®šå¤±?ï¿½ï¿½?' + err.message);
         console.error(err);
         showLoading(false);
     }
@@ -301,9 +301,9 @@ async function selectUser(name) {
 function applyUserConfig(config) {
     // Store sheet settings for data loading
     window.SHEET_ID = config.sheetId || '';
-    window.SHEET_NAME_SCHEDULE = config.sheetNameSchedule || 'è¡Œç?è¡?;
-    window.SHEET_NAME_RANDOM = config.sheetNameRandom || '?¨æ??¯é?';
-    window.SHEET_NAME_FOOD = config.sheetNameFood || 'ç¾é?';
+    window.SHEET_NAME_SCHEDULE = config.sheetNameSchedule || 'è¡Œï¿½?ï¿½?;
+    window.SHEET_NAME_RANDOM = config.sheetNameRandom || '?ï¿½ï¿½??ï¿½ï¿½?';
+    window.SHEET_NAME_FOOD = config.sheetNameFood || 'ç¾ï¿½?';
 
     // Apply trip dates
     localStorage.setItem('tripStartDate', config.tripStartDate || '');
@@ -361,7 +361,7 @@ async function loadData() {
     const sheetId = window.SHEET_ID;
     if (!sheetId) return;
 
-    // 1. ?ˆå? localStorage å¿«å?è¼‰å…¥ï¼ˆç??‹ï?
+    // 1. ?ï¿½ï¿½? localStorage å¿«ï¿½?è¼‰å…¥ï¼ˆï¿½??ï¿½ï¿½?
     const cached = localStorage.getItem('cachedAllData');
     if (cached) {
         try {
@@ -373,7 +373,7 @@ async function loadData() {
         showLoading(true);
     }
 
-    // 2. ?Œæ™¯å¾?API ?´æ–°?€?°è???
+    // 2. ?ï¿½æ™¯ï¿½?API ?ï¿½æ–°?ï¿½?ï¿½ï¿½???
     try {
         const res = await fetch(CONFIG_SCRIPT_URL + '?action=getAllData' + getAuthParams());
         const data = await res.json();
@@ -388,7 +388,7 @@ async function loadData() {
         localStorage.setItem('cachedAllData', JSON.stringify(data));
         applyAllData(data);
     } catch (err) {
-        console.error('è¼‰å…¥è³‡æ?å¤±æ?:', err);
+        console.error('è¼‰å…¥è³‡ï¿½?å¤±ï¿½?:', err);
     }
 
     showLoading(false);
@@ -429,7 +429,7 @@ async function silentLoadData() {
             if (schedList) renderScheduleEditList();
         }
     } catch (e) {
-        console.log('?Œæ™¯?´æ–°å¤±æ?:', e);
+        console.log('?ï¿½æ™¯?ï¿½æ–°å¤±ï¿½?:', e);
     }
 }
 
@@ -468,12 +468,12 @@ function mapApiData(arr, mapFn) {
 
 function mapScheduleItem(row) {
     return {
-        date: row['?¥æ?'] || row['date'] || '',
-        startTime: row['?‹å??‚é?'] || row['startTime'] || '',
-        endTime: row['çµæ??‚é?'] || row['endTime'] || '',
-        place: row['?°é?'] || row['place'] || '',
-        address: row['?°å?'] || row['address'] || '',
-        notes: row['?™è¨»'] || row['notes'] || '',
+        date: row['?ï¿½ï¿½?'] || row['date'] || '',
+        startTime: row['?ï¿½ï¿½??ï¿½ï¿½?'] || row['startTime'] || '',
+        endTime: row['çµï¿½??ï¿½ï¿½?'] || row['endTime'] || '',
+        place: row['?ï¿½ï¿½?'] || row['place'] || '',
+        address: row['?ï¿½ï¿½?'] || row['address'] || '',
+        notes: row['?ï¿½è¨»'] || row['notes'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -481,11 +481,11 @@ function mapScheduleItem(row) {
 
 function mapRandomPlace(row) {
     return {
-        place: row['?°é?'] || row['place'] || '',
-        address: row['?°å?'] || row['address'] || '',
-        type: row['é¡å?'] || row['type'] || '',
-        notes: row['?™è¨»'] || row['notes'] || '',
-        city: row['?å?'] || row['city'] || '',
+        place: row['?ï¿½ï¿½?'] || row['place'] || '',
+        address: row['?ï¿½ï¿½?'] || row['address'] || '',
+        type: row['é¡ï¿½?'] || row['type'] || '',
+        notes: row['?ï¿½è¨»'] || row['notes'] || '',
+        city: row['?ï¿½ï¿½?'] || row['city'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -493,17 +493,17 @@ function mapRandomPlace(row) {
 
 function mapFoodItem(row) {
     return {
-        name: row['åº—å?'] || row['name'] || '',
-        hours: row['?Ÿæ¥­?‚é?'] || row['hours'] || '',
-        address: row['?°å?'] || row['address'] || '',
-        type: row['é¡å?'] || row['type'] || '',
-        price: row['?¹ä?'] || row['price'] || '',
-        rating: row['Googleè©•å?'] || row['è©•å?'] || row['rating'] || '',
-        queue: row['?¯å¦?’é?'] || row['?¯å¦?€?’é?'] || row['?’é?'] || row['queue'] || '',
-        recommend: row['?¨è–¦é¤é?'] || row['?¨è–¦'] || row['recommend'] || '',
-        area: row['?°å?'] || row['?€??] || row['area'] || '',
-        notes: row['?™è¨»'] || row['notes'] || '',
-        city: row['?å?'] || row['city'] || '',
+        name: row['åº—ï¿½?'] || row['name'] || '',
+        hours: row['?ï¿½æ¥­?ï¿½ï¿½?'] || row['hours'] || '',
+        address: row['?ï¿½ï¿½?'] || row['address'] || '',
+        type: row['é¡ï¿½?'] || row['type'] || '',
+        price: row['?ï¿½ï¿½?'] || row['price'] || '',
+        rating: row['Googleè©•ï¿½?'] || row['è©•ï¿½?'] || row['rating'] || '',
+        queue: row['?ï¿½å¦?ï¿½ï¿½?'] || row['?ï¿½å¦?ï¿½?ï¿½ï¿½?'] || row['?ï¿½ï¿½?'] || row['queue'] || '',
+        recommend: row['?ï¿½è–¦é¤ï¿½?'] || row['?ï¿½è–¦'] || row['recommend'] || '',
+        area: row['?ï¿½ï¿½?'] || row['?ï¿½??] || row['area'] || '',
+        notes: row['?ï¿½è¨»'] || row['notes'] || '',
+        city: row['?ï¿½ï¿½?'] || row['city'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -512,8 +512,8 @@ function mapFoodItem(row) {
 function mapPackingItem(row, idx) {
     return {
         id: idx,
-        item: row['?©å?'] || row['item'] || '',
-        category: row['?†é?'] || row['category'] || '',
+        item: row['?ï¿½ï¿½?'] || row['item'] || '',
+        category: row['?ï¿½ï¿½?'] || row['category'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -522,16 +522,16 @@ function mapPackingItem(row, idx) {
 function mapSegmentItem(row, idx) {
     return {
         idx,
-        name: row['æ®µè½??] || row['?ç¨±'] || row['name'] || '',
-        country: row['?‹å®¶'] || row['country'] || '',
-        city: row['?å?'] || row['city'] || '',
+        name: row['æ®µè½??] || row['?ï¿½ç¨±'] || row['name'] || '',
+        country: row['?ï¿½å®¶'] || row['country'] || '',
+        city: row['?ï¿½ï¿½?'] || row['city'] || '',
         lat: parseFloat(row['ç·¯åº¦'] || row['lat']) || 0,
         lng: parseFloat(row['ç¶“åº¦'] || row['lng']) || 0,
-        startDate: toInputDate(row['?‹å???] || row['?‹å??¥æ?'] || row['startDate'] || ''),
-        endDate: toInputDate(row['çµæ???] || row['çµæ??¥æ?'] || row['endDate'] || ''),
-        hotelName: row['ä½å®¿?ç¨±'] || row['é£¯å??ç¨±'] || row['hotelName'] || '',
-        hotelAddress: row['ä½å®¿?°å?'] || row['é£¯å??°å?'] || row['hotelAddress'] || '',
-        hotelPhone: row['ä½å®¿?»è©±'] || row['é£¯å??»è©±'] || row['hotelPhone'] || '',
+        startDate: toInputDate(row['?ï¿½ï¿½???] || row['?ï¿½ï¿½??ï¿½ï¿½?'] || row['startDate'] || ''),
+        endDate: toInputDate(row['çµï¿½???] || row['çµï¿½??ï¿½ï¿½?'] || row['endDate'] || ''),
+        hotelName: row['ä½å®¿?ï¿½ç¨±'] || row['é£¯ï¿½??ï¿½ç¨±'] || row['hotelName'] || '',
+        hotelAddress: row['ä½å®¿?ï¿½ï¿½?'] || row['é£¯ï¿½??ï¿½ï¿½?'] || row['hotelAddress'] || '',
+        hotelPhone: row['ä½å®¿?ï¿½è©±'] || row['é£¯ï¿½??ï¿½è©±'] || row['hotelPhone'] || '',
         _uuid: row._uuid || '',
         _rowIndex: row._rowIndex
     };
@@ -655,9 +655,9 @@ function updateNowTab() {
         $('#navigate-now').onclick = () => navigateTo(currentActivity.address || currentActivity.place);
         $('#current-activity').style.display = 'block';
     } else {
-        $('#now-place').textContent = '?®å?æ²’æ?è¡Œç?';
+        $('#now-place').textContent = '?ï¿½ï¿½?æ²’ï¿½?è¡Œï¿½?';
         $('#now-time-range').textContent = '';
-        $('#now-notes').textContent = todaySchedule.length > 0 ? 'ç­‰å?ä¸‹ä??‹è?ç¨?..' : 'ä»Šå¤©æ²’æ?å®‰æ?è¡Œç?';
+        $('#now-notes').textContent = todaySchedule.length > 0 ? 'ç­‰ï¿½?ä¸‹ï¿½??ï¿½ï¿½?ï¿½?..' : 'ä»Šå¤©æ²’ï¿½?å®‰ï¿½?è¡Œï¿½?';
         $('#navigate-now').style.display = 'none';
         $('#current-activity').style.display = 'block';
     }
@@ -687,8 +687,8 @@ function updateTimeline() {
     if (daySchedule.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">?“­</div>
-                <p>?™å¤©æ²’æ?å®‰æ?è¡Œç?</p>
+                <div class="emoji">?ï¿½ï¿½</div>
+                <p>?ï¿½å¤©æ²’ï¿½?å®‰ï¿½?è¡Œï¿½?</p>
             </div>
         `;
         return;
@@ -710,7 +710,7 @@ function updateTimeline() {
                 <div class="place">${item.place}</div>
                 ${item.notes ? `<div class="notes">${item.notes}</div>` : ''}
                 <button class="navigate-timeline" onclick="navigateTo('${(item.address || item.place).replace(/'/g, "\\'")}')">
-                    ?§­ å°èˆª
+                    ?ï¿½ï¿½ å°èˆª
                 </button>
             </div>
         `;
@@ -761,8 +761,8 @@ function updateRandomList() {
         filtersContainer.innerHTML = '';
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">?²</div>
-                <p>å°šæœªè¨­å??¨æ??¯é?</p>
+                <div class="emoji">?ï¿½ï¿½</div>
+                <p>å°šæœªè¨­ï¿½??ï¿½ï¿½??ï¿½ï¿½?</p>
             </div>
         `;
         return;
@@ -775,12 +775,12 @@ function updateRandomList() {
     const hiddenCats = categories.slice(MAX_VISIBLE);
 
     filtersContainer.innerHTML = `
-        <button class="filter-btn ${selectedCategory === 'all' ? 'active' : ''}" data-category="all">?¨éƒ¨</button>
+        <button class="filter-btn ${selectedCategory === 'all' ? 'active' : ''}" data-category="all">?ï¿½éƒ¨</button>
         ${visibleCats.map(cat => `
             <button class="filter-btn ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}">${getCategoryEmoji(cat)} ${cat}</button>
         `).join('')}
         ${hiddenCats.length > 0 ? `
-            <button class="filter-btn filter-expand-btn" data-expand="places">+${hiddenCats.length} ?´å?</button>
+            <button class="filter-btn filter-expand-btn" data-expand="places">+${hiddenCats.length} ?ï¿½ï¿½?</button>
             ${hiddenCats.map(cat => `
                 <button class="filter-btn filter-hidden ${selectedCategory === cat ? 'active' : ''}" data-category="${cat}" style="display:none;">${getCategoryEmoji(cat)} ${cat}</button>
             `).join('')}
@@ -822,8 +822,8 @@ function renderFilteredList() {
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">?“­</div>
-                <p>?™å€‹å?é¡æ??‰æ™¯é»?/p>
+                <div class="emoji">?ï¿½ï¿½</div>
+                <p>?ï¿½å€‹ï¿½?é¡ï¿½??ï¿½æ™¯ï¿½?/p>
             </div>
         `;
         return;
@@ -842,28 +842,28 @@ function renderFilteredList() {
 
 function getCategoryEmoji(type) {
     const emojiMap = {
-        '??: '?½ï¸?,
-        'ç¾é?': '?½ï¸?,
-        'é¤å»³': '?½ï¸?,
-        'å°å?': '??',
-        '?–å•¡': '??,
-        'é£²æ?': '??',
-        'è³¼ç‰©': '??ï¸?,
-        '?›è?': '??ï¸?,
-        '?¯é?': '?“¸',
-        'è§€??: '?“¸',
-        '?ªç„¶': '?Œ¿',
-        '?¬å?': '?Œ³',
-        '?©å…·åº?: '?§¸',
-        '?©å…·': '?§¸',
-        '?‡å‰µ': '?¨',
-        '?¸å?': '??',
-        'å¤œå?': '?®',
-        'å»Ÿå?': '?¯',
-        '?šç‰©é¤?: '??ï¸?,
-        'å¨›æ?': '?®',
-        '?’å§': '?º',
-        '?œé?': '?°',
+        '??: '?ï¿½ï¿½ï¿½?,
+        'ç¾ï¿½?': '?ï¿½ï¿½ï¿½?,
+        'é¤å»³': '?ï¿½ï¿½ï¿½?,
+        'å°ï¿½?': '??',
+        '?ï¿½å•¡': '??,
+        'é£²ï¿½?': '??',
+        'è³¼ç‰©': '??ï¿½?,
+        '?ï¿½ï¿½?': '??ï¿½?,
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        'è§€??: '?ï¿½ï¿½',
+        '?ï¿½ç„¶': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        '?ï¿½å…·ï¿½?: '?ï¿½ï¿½',
+        '?ï¿½å…·': '?ï¿½ï¿½',
+        '?ï¿½å‰µ': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '??',
+        'å¤œï¿½?': '?ï¿½ï¿½',
+        'å»Ÿï¿½?': '?ï¿½ï¿½',
+        '?ï¿½ç‰©ï¿½?: '??ï¿½?,
+        'å¨›ï¿½?': '?ï¿½ï¿½',
+        '?ï¿½å§': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
     };
     return emojiMap[type] || '??';
 }
@@ -898,8 +898,8 @@ function updateFoodList() {
         filtersContainer.innerHTML = '';
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">?½ï¸?/div>
-                <p>å°šæœªè¨­å?ç¾é?æ¸…å–®</p>
+                <div class="emoji">?ï¿½ï¿½ï¿½?/div>
+                <p>å°šæœªè¨­ï¿½?ç¾ï¿½?æ¸…å–®</p>
             </div>
         `;
         return;
@@ -912,12 +912,12 @@ function updateFoodList() {
     const hiddenCats = categories.slice(MAX_VISIBLE_FOOD);
 
     filtersContainer.innerHTML = `
-        <button class="filter-btn ${selectedFoodCategory === 'all' ? 'active' : ''}" data-category="all">?¨éƒ¨</button>
+        <button class="filter-btn ${selectedFoodCategory === 'all' ? 'active' : ''}" data-category="all">?ï¿½éƒ¨</button>
         ${visibleCats.map(cat => `
             <button class="filter-btn ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}">${getFoodEmoji(cat)} ${cat}</button>
         `).join('')}
         ${hiddenCats.length > 0 ? `
-            <button class="filter-btn filter-expand-btn" data-expand="food">+${hiddenCats.length} ?´å?</button>
+            <button class="filter-btn filter-expand-btn" data-expand="food">+${hiddenCats.length} ?ï¿½ï¿½?</button>
             ${hiddenCats.map(cat => `
                 <button class="filter-btn filter-hidden ${selectedFoodCategory === cat ? 'active' : ''}" data-category="${cat}" style="display:none;">${getFoodEmoji(cat)} ${cat}</button>
             `).join('')}
@@ -959,8 +959,8 @@ function renderFilteredFoodList() {
     if (filtered.length === 0) {
         container.innerHTML = `
             <div class="empty-state">
-                <div class="emoji">?“­</div>
-                <p>?™å€‹å?é¡æ??‰é?å»?/p>
+                <div class="emoji">?ï¿½ï¿½</div>
+                <p>?ï¿½å€‹ï¿½?é¡ï¿½??ï¿½ï¿½?ï¿½?/p>
             </div>
         `;
         return;
@@ -968,19 +968,19 @@ function renderFilteredFoodList() {
 
     container.innerHTML = filtered.map(item => {
         const tags = [
-            item.price ? `?’° ${item.price}` : '',
-            item.rating ? `â­?${item.rating}` : '',
+            item.price ? `?ï¿½ï¿½ ${item.price}` : '',
+            item.rating ? `ï¿½?${item.rating}` : '',
             item.queue ? `?? ${item.queue}` : '',
             item.area ? `?? ${item.area}` : '',
             item.hours ? `?? ${item.hours}` : ''
-        ].filter(Boolean).join('?€');
+        ].filter(Boolean).join('?ï¿½');
 
         return `
             <div class="place-card food-card" onclick="navigateTo('${(item.address || item.name).replace(/'/g, "\\'")}')">
                 <div class="place-info">
                     <h3>${item.name}</h3>
                     ${tags ? `<p class="food-tags">${tags}</p>` : ''}
-                    ${item.recommend ? `<p class="food-recommend">?½ï¸?${item.recommend}</p>` : ''}
+                    ${item.recommend ? `<p class="food-recommend">?ï¿½ï¿½ï¿½?${item.recommend}</p>` : ''}
                     ${item.notes ? `<p class="food-notes">${item.notes}</p>` : ''}
                 </div>
                 ${item.type ? `<span class="place-type">${getFoodEmoji(item.type)} ${item.type}</span>` : ''}
@@ -991,38 +991,38 @@ function renderFilteredFoodList() {
 
 function getFoodEmoji(type) {
     const emojiMap = {
-        '?‰éºµ': '??',
-        '?¥å?': '?±',
-        'å£½å¸': '?£',
-        '?’è?': '?¥©',
-        '?«é?': '??',
-        '?›æ?': '?¥©',
-        'ç¾©å?': '??',
-        '?«è–©': '??',
+        '?ï¿½éºµ': '??',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        'å£½å¸': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '??',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        'ç¾©ï¿½?': '??',
+        '?ï¿½è–©': '??',
         'æ¼¢å ¡': '??',
-        '?¸é?': '??',
-        'ä¸­å?': '?¥¢',
-        '?°å?': '??',
-        'å°å?': '??',
-        'æ»·å‘³': '?²',
-        '?©é?': '??',
-        '?©å?é¤?: '??',
-        '?–å•¡': '??,
-        'é£²æ?': '??',
-        '?œé?': '?°',
-        '?°å?': '?¦',
-        'éºµå?': '??',
-        '?“å?': '??',
-        'æ³°å?': '??',
-        '?°åº¦': '??',
-        'è¶Šå?': '??',
-        'ç´ é?': '??',
+        '?ï¿½ï¿½?': '??',
+        'ä¸­ï¿½?': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '??',
+        'å°ï¿½?': '??',
+        'æ»·å‘³': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '??',
+        '?ï¿½ï¿½?ï¿½?: '??',
+        '?ï¿½å•¡': '??,
+        'é£²ï¿½?': '??',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        '?ï¿½ï¿½?': '?ï¿½ï¿½',
+        'éºµï¿½?': '??',
+        '?ï¿½ï¿½?': '??',
+        'æ³°ï¿½?': '??',
+        '?ï¿½åº¦': '??',
+        'è¶Šï¿½?': '??',
+        'ç´ ï¿½?': '??',
         'æµ·é®®': '??',
-        'å±…é?å±?: '?¶',
-        '?’å§': '?º',
-        'å¤œå?': '?®',
+        'å±…ï¿½?ï¿½?: '?ï¿½ï¿½',
+        '?ï¿½å§': '?ï¿½ï¿½',
+        'å¤œï¿½?': '?ï¿½ï¿½',
     };
-    return emojiMap[type] || '?½ï¸?;
+    return emojiMap[type] || '?ï¿½ï¿½ï¿½?;
 }
 
 function shuffleFood() {
@@ -1038,14 +1038,14 @@ function shuffleFood() {
     $('#food-pick-type').textContent = pick.type ? `${getFoodEmoji(pick.type)} ${pick.type}` : '';
 
     const details = [
-        pick.price ? `?’° ${pick.price}` : '',
-        pick.rating ? `â­?${pick.rating}` : '',
+        pick.price ? `?ï¿½ï¿½ ${pick.price}` : '',
+        pick.rating ? `ï¿½?${pick.rating}` : '',
         pick.queue ? `?? ${pick.queue}` : '',
         pick.area ? `?? ${pick.area}` : '',
         pick.hours ? `?? ${pick.hours}` : '',
-        pick.recommend ? `?½ï¸?${pick.recommend}` : '',
+        pick.recommend ? `?ï¿½ï¿½ï¿½?${pick.recommend}` : '',
         pick.notes ? `?? ${pick.notes}` : ''
-    ].filter(Boolean).join('?€');
+    ].filter(Boolean).join('?ï¿½');
 
     $('#food-pick-notes').textContent = details;
     $('#navigate-food-pick').onclick = () => navigateTo(pick.address || pick.name);
@@ -1101,7 +1101,7 @@ async function refreshAll() {
             refreshToolsDisplay();
         }
     } catch (e) {
-        console.log('?æ–°?–å?è¨­å?å¤±æ?:', e);
+        console.log('?ï¿½æ–°?ï¿½ï¿½?è¨­ï¿½?å¤±ï¿½?:', e);
     }
 
     // Reload all data via getAllData
@@ -1133,7 +1133,7 @@ async function refreshAll() {
         updateFoodList();
         renderPackingList();
     } catch (err) {
-        console.error('?æ–°è¼‰å…¥è³‡æ?å¤±æ?:', err);
+        console.error('?ï¿½æ–°è¼‰å…¥è³‡ï¿½?å¤±ï¿½?:', err);
     }
 }
 
@@ -1211,11 +1211,11 @@ function initPullToRefresh() {
         if (!pulling) return;
         pulling = false;
         if (indicator.classList.contains('visible')) {
-            indicator.querySelector('span').textContent = '?? ?´æ–°ä¸?..';
+            indicator.querySelector('span').textContent = '?? ?ï¿½æ–°ï¿½?..';
             // Don't show full-screen loading, just update in background
             refreshAll().then(() => {
                 indicator.classList.remove('visible');
-                indicator.querySelector('span').textContent = '??ä¸‹æ??´æ–°';
+                indicator.querySelector('span').textContent = '??ä¸‹ï¿½??ï¿½æ–°';
             });
         }
     });
@@ -1263,7 +1263,7 @@ function initCountdown() {
         if (savingDates) return;
         savingDates = true;
         $('#save-trip-dates').disabled = true;
-        $('#save-trip-dates').textContent = '?²å?ä¸?..';
+        $('#save-trip-dates').textContent = '?ï¿½ï¿½?ï¿½?..';
 
         const startVal = startInput.value;
         const endVal = endInput.value;
@@ -1277,7 +1277,7 @@ function initCountdown() {
             tripEndDate: endVal
         });
 
-        alert('???…ç??¥æ?å·²å„²å­?);
+        alert('???ï¿½ï¿½??ï¿½ï¿½?å·²å„²ï¿½?);
         savingDates = false;
         $('#save-trip-dates').disabled = false;
         $('#save-trip-dates').textContent = 'ä¿®æ”¹';
@@ -1325,7 +1325,7 @@ function updateCountdown() {
 
     if (!startStr) {
         numberEl.textContent = '-';
-        labelEl.textContent = 'è«‹è¨­å®šå‡º?¼æ—¥??;
+        labelEl.textContent = 'è«‹è¨­å®šå‡º?ï¿½æ—¥??;
         return;
     }
 
@@ -1338,15 +1338,15 @@ function updateCountdown() {
 
     if (daysUntilStart > 0) {
         numberEl.textContent = daysUntilStart;
-        labelEl.textContent = 'å¤©å??ºç™¼ ?ˆï?';
+        labelEl.textContent = 'å¤©ï¿½??ï¿½ç™¼ ?ï¿½ï¿½?';
     } else if (end && today <= end) {
         const tripDay = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
         const totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
         numberEl.textContent = `Day ${tripDay}`;
-        labelEl.textContent = `?…ç?ç¬?${tripDay}/${totalDays} å¤???`;
+        labelEl.textContent = `?ï¿½ï¿½?ï¿½?${tripDay}/${totalDays} ï¿½???`;
     } else {
         numberEl.textContent = '??';
-        labelEl.textContent = '?…ç?å·²ç??Ÿï??æ†¶æ»¿æ»¿';
+        labelEl.textContent = '?ï¿½ï¿½?å·²ï¿½??ï¿½ï¿½??ï¿½æ†¶æ»¿æ»¿';
     }
 }
 
@@ -1397,7 +1397,7 @@ function initCurrency() {
 async function fetchExchangeRate() {
     const btn = $('#fetch-rate');
     btn.disabled = true;
-    btn.textContent = '?´æ–°ä¸?..';
+    btn.textContent = '?ï¿½æ–°ï¿½?..';
 
     try {
         const res = await fetch('https://api.exchangerate-api.com/v4/latest/JPY');
@@ -1413,12 +1413,12 @@ async function fetchExchangeRate() {
                 $('#twd-input').value = (jpy * rate).toFixed(0);
             }
             btn.textContent = '??å·²æ›´??;
-            setTimeout(() => { btn.textContent = '?´æ–°?¯ç?'; }, 2000);
+            setTimeout(() => { btn.textContent = '?ï¿½æ–°?ï¿½ï¿½?'; }, 2000);
         }
     } catch (err) {
-        btn.textContent = '??å¤±æ?';
-        setTimeout(() => { btn.textContent = '?´æ–°?¯ç?'; }, 2000);
-        console.error('?¯ç??“å?å¤±æ?:', err);
+        btn.textContent = '??å¤±ï¿½?';
+        setTimeout(() => { btn.textContent = '?ï¿½æ–°?ï¿½ï¿½?'; }, 2000);
+        console.error('?ï¿½ï¿½??ï¿½ï¿½?å¤±ï¿½?:', err);
     }
 
     btn.disabled = false;
@@ -1445,7 +1445,7 @@ function initEmergency() {
         const form = $('#emergency-edit-form');
         const isVisible = form.style.display !== 'none';
         form.style.display = isVisible ? 'none' : 'flex';
-        $('#toggle-emergency-edit').textContent = isVisible ? 'ä¿®æ”¹ä½å®¿è³‡è?' : '?–æ?';
+        $('#toggle-emergency-edit').textContent = isVisible ? 'ä¿®æ”¹ä½å®¿è³‡ï¿½?' : '?ï¿½ï¿½?';
     });
 
     // Save with debounce
@@ -1459,8 +1459,8 @@ function initEmergency() {
         const phone = $('#edit-hotel-phone').value.trim();
         localStorage.setItem('hotelAddress', address);
         localStorage.setItem('hotelPhone', phone);
-        $('#hotel-address').textContent = address || '?ªè¨­å®?;
-        $('#hotel-phone').textContent = phone || '?ªè¨­å®?;
+        $('#hotel-address').textContent = address || '?ï¿½è¨­ï¿½?;
+        $('#hotel-phone').textContent = phone || '?ï¿½è¨­ï¿½?;
         $('#hotel-phone').href = phone ? `tel:${phone}` : '';
 
         // Save to Apps Script
@@ -1471,9 +1471,9 @@ function initEmergency() {
 
         // Hide form
         $('#emergency-edit-form').style.display = 'none';
-        $('#toggle-emergency-edit').textContent = 'ä¿®æ”¹ä½å®¿è³‡è?';
+        $('#toggle-emergency-edit').textContent = 'ä¿®æ”¹ä½å®¿è³‡ï¿½?';
 
-        alert('??ä½å®¿è³‡è?å·²å„²å­?);
+        alert('??ä½å®¿è³‡ï¿½?å·²å„²ï¿½?);
         saving = false;
         $('#save-emergency').disabled = false;
     });
@@ -1517,13 +1517,13 @@ function initPackingList() {
             });
 
             if (items.length === 0) {
-                alert('è«‹è‡³å°‘å¡«å¯«ä??‹ç‰©??);
+                alert('è«‹è‡³å°‘å¡«å¯«ï¿½??ï¿½ç‰©??);
                 return;
             }
 
             saving = true;
             saveBtn.disabled = true;
-            saveBtn.textContent = '?å‡ºä¸?..';
+            saveBtn.textContent = '?ï¿½å‡ºï¿½?..';
 
             await batchSavePackingItems(items);
 
@@ -1531,7 +1531,7 @@ function initPackingList() {
             packingBatchItems = [];
             saving = false;
             saveBtn.disabled = false;
-            saveBtn.textContent = '?¨éƒ¨?å‡º';
+            saveBtn.textContent = '?ï¿½éƒ¨?ï¿½å‡º';
         });
     }
 }
@@ -1542,10 +1542,10 @@ function renderPackingBatchInputs() {
     container.innerHTML = packingBatchItems.map((item, idx) => `
         <div class="batch-input-row form-row" style="margin-bottom:8px;">
             <div class="form-group" style="flex:2;">
-                <input type="text" class="batch-name" placeholder="?©å??ç¨±" value="${item.item || ''}">
+                <input type="text" class="batch-name" placeholder="?ï¿½ï¿½??ï¿½ç¨±" value="${item.item || ''}">
             </div>
             <div class="form-group" style="flex:1;">
-                <input type="text" class="batch-cat" placeholder="?†é?" value="${item.category || ''}">
+                <input type="text" class="batch-cat" placeholder="?ï¿½ï¿½?" value="${item.category || ''}">
             </div>
         </div>
     `).join('');
@@ -1584,7 +1584,7 @@ function initSyncPackingChecks() {
     if (btn) {
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            btn.textContent = '?Œæ­¥ä¸?..';
+            btn.textContent = '?ï¿½æ­¥ï¿½?..';
             const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
             const payload = {
                 action: 'syncPackingChecks',
@@ -1594,10 +1594,10 @@ function initSyncPackingChecks() {
                 checkedIndexes: checked
             };
             queueServerWrite(payload, 'sync');
-            btn.textContent = '??å·²å?æ­?;
+            btn.textContent = '??å·²ï¿½?ï¿½?;
             setTimeout(() => {
                 btn.disabled = false;
-                btn.textContent = '?? ?Œæ­¥?¾é¸?€??;
+                btn.textContent = '?? ?ï¿½æ­¥?ï¿½é¸?ï¿½??;
             }, 2000);
         });
     }
@@ -1637,13 +1637,13 @@ function initShoppingList() {
             });
 
             if (items.length === 0) {
-                alert('è«‹è‡³å°‘å¡«å¯«ä??‹ç‰©??);
+                alert('è«‹è‡³å°‘å¡«å¯«ï¿½??ï¿½ç‰©??);
                 return;
             }
 
             saving = true;
             saveBtn.disabled = true;
-            saveBtn.textContent = '?å‡ºä¸?..';
+            saveBtn.textContent = '?ï¿½å‡ºï¿½?..';
 
             await batchSaveShoppingItems(items);
 
@@ -1651,7 +1651,7 @@ function initShoppingList() {
             shoppingBatchItems = [];
             saving = false;
             saveBtn.disabled = false;
-            saveBtn.textContent = '?¨éƒ¨?å‡º';
+            saveBtn.textContent = '?ï¿½éƒ¨?ï¿½å‡º';
         });
     }
 }
@@ -1662,10 +1662,10 @@ function renderShoppingBatchInputs() {
     container.innerHTML = shoppingBatchItems.map((item, idx) => `
         <div class="batch-input-row form-row" style="margin-bottom:8px;">
             <div class="form-group" style="flex:2;">
-                <input type="text" class="batch-name" placeholder="?©å??ç¨±" value="${item.item || ''}">
+                <input type="text" class="batch-name" placeholder="?ï¿½ï¿½??ï¿½ç¨±" value="${item.item || ''}">
             </div>
             <div class="form-group" style="flex:1;">
-                <input type="text" class="batch-cat" placeholder="?†é?" value="${item.category || ''}">
+                <input type="text" class="batch-cat" placeholder="?ï¿½ï¿½?" value="${item.category || ''}">
             </div>
         </div>
     `).join('');
@@ -1682,7 +1682,7 @@ function loadShoppingList() {
     const container = $('#shopping-list');
     if (!container) return;
     if (shoppingItems.length === 0) {
-        container.innerHTML = '<p class="hint">è³¼ç‰©æ¸…å–®?¯ç©º??/p>';
+        container.innerHTML = '<p class="hint">è³¼ç‰©æ¸…å–®?ï¿½ç©º??/p>';
         return;
     }
     renderShoppingList();
@@ -1696,7 +1696,7 @@ function renderShoppingList() {
     const deleteBtn = $('#confirm-delete-shopping');
 
     if (shoppingItems.length === 0) {
-        container.innerHTML = '<p class="hint">è³¼ç‰©æ¸…å–®?¯ç©º??/p>';
+        container.innerHTML = '<p class="hint">è³¼ç‰©æ¸…å–®?ï¿½ç©º??/p>';
         updateShoppingProgress(0, 0);
         if (syncBtn) syncBtn.style.display = 'none';
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -1713,8 +1713,8 @@ function renderShoppingList() {
         if (isEditing) {
             return `
                 <div class="packing-item editing" style="flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="?©å??ç¨±"></div>
-                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="?†é?"></div>
+                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="?ï¿½ï¿½??ï¿½ç¨±"></div>
+                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="?ï¿½ï¿½?"></div>
                     <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditShopping(${idx})">??/button>
                 </div>
             `;
@@ -1725,8 +1725,8 @@ function renderShoppingList() {
                 <div class="check">${isChecked ? '?? : ''}</div>
                 <span class="packing-name">${item.item}</span>
                 ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
-                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditShopping(${idx})">?ï?</button>
-                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markShoppingDelete(${idx})">${isMarkedDelete ? '?? : '??ï¸?}</button>
+                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditShopping(${idx})">?ï¿½ï¿½?</button>
+                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markShoppingDelete(${idx})">${isMarkedDelete ? '?? : '??ï¿½?}</button>
             </div>
         `;
     }).join('');
@@ -1735,7 +1735,7 @@ function renderShoppingList() {
 
     if (deleteBtn) {
         deleteBtn.style.display = shoppingDeleteMarked.length > 0 ? 'block' : 'none';
-        deleteBtn.textContent = `??ï¸?ç¢ºè??ªé™¤ ${shoppingDeleteMarked.length} ?…`;
+        deleteBtn.textContent = `??ï¿½?ç¢ºï¿½??ï¿½é™¤ ${shoppingDeleteMarked.length} ?ï¿½`;
     }
 }
 
@@ -1764,7 +1764,7 @@ function confirmEditShopping(idx) {
     const cat = row.querySelector('.edit-cat').value.trim();
 
     if (!name) {
-        alert('?©å??ç¨±ä¸èƒ½?ºç©º');
+        alert('?ï¿½ï¿½??ï¿½ç¨±ä¸èƒ½?ï¿½ç©º');
         return;
     }
 
@@ -1795,7 +1795,7 @@ function initConfirmDeleteShopping() {
             if (shoppingDeleteMarked.length === 0) return;
 
             btn.disabled = true;
-            btn.textContent = '?ªé™¤ä¸?..';
+            btn.textContent = '?ï¿½é™¤ï¿½?..';
 
             const sorted = [...shoppingDeleteMarked].sort((a, b) => b - a);
             sorted.forEach(idx => shoppingItems.splice(idx, 1));
@@ -1814,7 +1814,7 @@ function initConfirmDeleteShopping() {
             queueServerWrite(payload, 'delete');
 
             btn.disabled = false;
-            btn.textContent = '??ï¸?ç¢ºè??ªé™¤å·²é¸?…ç›®';
+            btn.textContent = '??ï¿½?ç¢ºï¿½??ï¿½é™¤å·²é¸?ï¿½ç›®';
         });
     }
 }
@@ -1861,7 +1861,7 @@ function initSyncShoppingChecks() {
     if (btn) {
         btn.addEventListener('click', async () => {
             btn.disabled = true;
-            btn.textContent = '?Œæ­¥ä¸?..';
+            btn.textContent = '?ï¿½æ­¥ï¿½?..';
             const checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
             const payload = {
                 action: 'syncShoppingChecks',
@@ -1871,10 +1871,10 @@ function initSyncShoppingChecks() {
                 checkedIndexes: checked
             };
             queueServerWrite(payload, 'sync');
-            btn.textContent = '??å·²å?æ­?;
+            btn.textContent = '??å·²ï¿½?ï¿½?;
             setTimeout(() => {
                 btn.disabled = false;
-                btn.textContent = '?? ?Œæ­¥?¾é¸?€??;
+                btn.textContent = '?? ?ï¿½æ­¥?ï¿½é¸?ï¿½??;
             }, 2000);
         });
     }
@@ -1885,7 +1885,7 @@ async function loadPackingList() {
     const container = $('#packing-list');
     if (!container) return;
     if (packingItems.length === 0) {
-        container.innerHTML = '<p class="hint">è¡Œæ?æ¸…å–®?¯ç©º??/p>';
+        container.innerHTML = '<p class="hint">è¡Œï¿½?æ¸…å–®?ï¿½ç©º??/p>';
         return;
     }
     renderPackingList();
@@ -1914,7 +1914,7 @@ function renderPackingList() {
     const deleteBtn = $('#confirm-delete-packing');
 
     if (packingItems.length === 0) {
-        container.innerHTML = '<p class="hint">è¡Œæ?æ¸…å–®?¯ç©º??/p>';
+        container.innerHTML = '<p class="hint">è¡Œï¿½?æ¸…å–®?ï¿½ç©º??/p>';
         updatePackingProgress(0, 0);
         if (syncBtn) syncBtn.style.display = 'none';
         if (deleteBtn) deleteBtn.style.display = 'none';
@@ -1931,8 +1931,8 @@ function renderPackingList() {
         if (isEditing) {
             return `
                 <div class="packing-item editing" style="flex-wrap:wrap;">
-                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="?©å??ç¨±"></div>
-                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="?†é?"></div>
+                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="?ï¿½ï¿½??ï¿½ç¨±"></div>
+                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="?ï¿½ï¿½?"></div>
                     <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditPacking(${idx})">??/button>
                 </div>
             `;
@@ -1943,8 +1943,8 @@ function renderPackingList() {
                 <div class="check">${isChecked ? '?? : ''}</div>
                 <span class="packing-name">${item.item}</span>
                 ${item.category ? `<span class="place-type">${item.category}</span>` : ''}
-                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditPacking(${idx})">?ï?</button>
-                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markPackingDelete(${idx})">${isMarkedDelete ? '?? : '??ï¸?}</button>
+                <button class="sched-action-btn edit" onclick="event.stopPropagation();startEditPacking(${idx})">?ï¿½ï¿½?</button>
+                <button class="sched-action-btn delete packing-delete-btn" onclick="event.stopPropagation();markPackingDelete(${idx})">${isMarkedDelete ? '?? : '??ï¿½?}</button>
             </div>
         `;
     }).join('');
@@ -1954,7 +1954,7 @@ function renderPackingList() {
     // Show/hide delete confirm button
     if (deleteBtn) {
         deleteBtn.style.display = packingDeleteMarked.length > 0 ? 'block' : 'none';
-        deleteBtn.textContent = `??ï¸?ç¢ºè??ªé™¤ ${packingDeleteMarked.length} ?…`;
+        deleteBtn.textContent = `??ï¿½?ç¢ºï¿½??ï¿½é™¤ ${packingDeleteMarked.length} ?ï¿½`;
     }
 }
 
@@ -1982,7 +1982,7 @@ function confirmEditPacking(idx) {
     const cat = row.querySelector('.edit-cat').value.trim();
 
     if (!name) {
-        alert('?©å??ç¨±ä¸èƒ½?ºç©º');
+        alert('?ï¿½ï¿½??ï¿½ç¨±ä¸èƒ½?ï¿½ç©º');
         return;
     }
 
@@ -2013,7 +2013,7 @@ function initConfirmDeletePacking() {
             if (packingDeleteMarked.length === 0) return;
 
             btn.disabled = true;
-            btn.textContent = '?ªé™¤ä¸?..';
+            btn.textContent = '?ï¿½é™¤ï¿½?..';
 
             // Optimistic: remove from local
             const sorted = [...packingDeleteMarked].sort((a, b) => b - a);
@@ -2034,7 +2034,7 @@ function initConfirmDeletePacking() {
             queueServerWrite(payload, 'delete');
 
             btn.disabled = false;
-            btn.textContent = '??ï¸?ç¢ºè??ªé™¤å·²é¸?…ç›®';
+            btn.textContent = '??ï¿½?ç¢ºï¿½??ï¿½é™¤å·²é¸?ï¿½ç›®';
         });
     }
 }
@@ -2082,7 +2082,7 @@ async function saveUserInfoToServer(fields) {
             localStorage.setItem('userConfig_' + currentUser, JSON.stringify(cached));
         } catch (e) {}
     } catch (err) {
-        console.error('?²å??°ä¼º?å™¨å¤±æ?:', err);
+        console.error('?ï¿½ï¿½??ï¿½ä¼º?ï¿½å™¨å¤±ï¿½?:', err);
     }
 }
 
@@ -2091,16 +2091,16 @@ async function saveUserInfoToServer(fields) {
 
 // Weather code to emoji mapping
 function getWeatherEmoji(code) {
-    if (code === 0) return '?€ï¸?;
+    if (code === 0) return '?ï¿½ï¿½?;
     if (code <= 3) return '??;
-    if (code <= 48) return '?Œ«ï¸?;
-    if (code <= 55) return '?Œ¦ï¸?;
-    if (code <= 65) return '?Œ§ï¸?;
-    if (code <= 77) return '?Œ¨ï¸?;
-    if (code <= 82) return '?Œ§ï¸?;
-    if (code <= 86) return '?Œ¨ï¸?;
-    if (code >= 95) return '?ˆï?';
-    return '?Œ¤ï¸?;
+    if (code <= 48) return '?ï¿½ï¿½ï¿½?;
+    if (code <= 55) return '?ï¿½ï¿½ï¿½?;
+    if (code <= 65) return '?ï¿½ï¿½ï¿½?;
+    if (code <= 77) return '?ï¿½ï¿½ï¿½?;
+    if (code <= 82) return '?ï¿½ï¿½ï¿½?;
+    if (code <= 86) return '?ï¿½ï¿½ï¿½?;
+    if (code >= 95) return '?ï¿½ï¿½?';
+    return '?ï¿½ï¿½ï¿½?;
 }
 
 function getWeatherDesc(code) {
@@ -2110,10 +2110,10 @@ function getWeatherDesc(code) {
     if (code <= 55) return 'å°é›¨';
     if (code <= 65) return '??;
     if (code <= 77) return '??;
-    if (code <= 82) return '??›¨';
+    if (code <= 82) return '??ï¿½ï¿½';
     if (code <= 86) return 'å¤§é›ª';
-    if (code >= 95) return '?·é›¨';
-    return '?´æ?å¤šé›²';
+    if (code >= 95) return '?ï¿½é›¨';
+    return '?ï¿½ï¿½?å¤šé›²';
 }
 
 async function fetchWeather(lat, lng, days) {
@@ -2150,10 +2150,10 @@ async function updateCurrentWeather() {
         const emoji = getWeatherEmoji(code);
         const desc = getWeatherDesc(code);
 
-        el.textContent = `${emoji} ${temp}Â°C ${desc}?€?é›¨ ${rainProb}%`;
+        el.textContent = `${emoji} ${temp}Â°C ${desc}?ï¿½?ï¿½é›¨ ${rainProb}%`;
         el.style.display = 'block';
     } catch (e) {
-        console.log('å¤©æ°£?–å?å¤±æ?:', e);
+        console.log('å¤©æ°£?ï¿½ï¿½?å¤±ï¿½?:', e);
     }
 }
 
@@ -2179,7 +2179,7 @@ async function loadTripWeather() {
 
     if (start > maxForecastDate) {
         section.style.display = 'block';
-        container.innerHTML = '<p class="hint">å¤©æ°£?å ±?…æ?ä¾›æœªä¾?16 å¤©ï??…ç??¥æ?è¶…å‡ºç¯„å?</p>';
+        container.innerHTML = '<p class="hint">å¤©æ°£?ï¿½å ±?ï¿½ï¿½?ä¾›æœªï¿½?16 å¤©ï¿½??ï¿½ï¿½??ï¿½ï¿½?è¶…å‡ºç¯„ï¿½?</p>';
         return;
     }
 
@@ -2225,14 +2225,14 @@ async function loadTripWeather() {
 
         if (tripDays.length === 0) {
             section.style.display = 'block';
-            container.innerHTML = '<p class="hint">?¡æ??–å??…ç??Ÿé?å¤©æ°£è³‡æ?</p>';
+            container.innerHTML = '<p class="hint">?ï¿½ï¿½??ï¿½ï¿½??ï¿½ï¿½??ï¿½ï¿½?å¤©æ°£è³‡ï¿½?</p>';
             return;
         }
 
         // Rain alert
         if (rainyDays.length > 0) {
             const rainyDateList = rainyDays.map(d => d.dayLabel).join('??);
-            alertEl.textContent = `???é?ï¼?{rainyDateList} ?é›¨æ©Ÿç?é«˜ï?è¨˜å?å¸¶å?ï¼`;
+            alertEl.textContent = `???ï¿½ï¿½?ï¿½?{rainyDateList} ?ï¿½é›¨æ©Ÿï¿½?é«˜ï¿½?è¨˜ï¿½?å¸¶ï¿½?ï¼`;
             alertEl.style.display = 'block';
         } else {
             alertEl.style.display = 'none';
@@ -2270,7 +2270,7 @@ async function loadTripWeather() {
                     <div class="weather-day" style="opacity:0.5;">
                         <span class="weather-date">${day.dayLabel}</span>
                         <span class="weather-icon">??/span>
-                        <span class="weather-temp" style="flex:1;">å°šç„¡?å ±ï¼ˆè??ºé??±ç??ï?</span>
+                        <span class="weather-temp" style="flex:1;">å°šç„¡?ï¿½å ±ï¼ˆï¿½??ï¿½ï¿½??ï¿½ï¿½??ï¿½ï¿½?</span>
                     </div>
                 `;
             }
@@ -2279,87 +2279,87 @@ async function loadTripWeather() {
                     <span class="weather-date">${day.dayLabel}</span>
                     <span class="weather-icon">${day.emoji}</span>
                     <span class="weather-temp">${day.maxTemp}Â° / ${day.minTemp}Â°</span>
-                    <span class="weather-rain">?é›¨ ${day.rain}%</span>
+                    <span class="weather-rain">?ï¿½é›¨ ${day.rain}%</span>
                 </div>
             `;
         }).join('');
 
         section.style.display = 'block';
     } catch (e) {
-        console.log('?…ç?å¤©æ°£?–å?å¤±æ?:', e);
+        console.log('?ï¿½ï¿½?å¤©æ°£?ï¿½ï¿½?å¤±ï¿½?:', e);
         section.style.display = 'block';
-        container.innerHTML = '<p class="hint">å¤©æ°£è³‡æ?è¼‰å…¥å¤±æ?</p>';
+        container.innerHTML = '<p class="hint">å¤©æ°£è³‡ï¿½?è¼‰å…¥å¤±ï¿½?</p>';
     }
 }
 
 
-// ==================== è¡Œç?æ®µè½ç®¡ç? ====================
+// ==================== è¡Œï¿½?æ®µè½ç®¡ï¿½? ====================
 
-// å¸¸è??…é??å?åº§æ?è³‡æ?åº?
+// å¸¸ï¿½??ï¿½ï¿½??ï¿½ï¿½?åº§ï¿½?è³‡ï¿½?ï¿½?
 const CITY_DATABASE = {
-    '?¥æœ¬': {
-        '?±äº¬': { lat: 35.6762, lng: 139.6503 },
+    '?ï¿½æœ¬': {
+        '?ï¿½äº¬': { lat: 35.6762, lng: 139.6503 },
         'å¤§é˜ª': { lat: 34.6937, lng: 135.5023 },
         'äº¬éƒ½': { lat: 35.0116, lng: 135.7681 },
-        '?å¤å±?: { lat: 35.1815, lng: 136.9066 },
+        '?ï¿½å¤ï¿½?: { lat: 35.1815, lng: 136.9066 },
         'ç¦å²¡': { lat: 33.5904, lng: 130.4017 },
-        '?­å?': { lat: 43.0618, lng: 141.3545 },
+        '?ï¿½ï¿½?': { lat: 43.0618, lng: 141.3545 },
         'æ²–ç¹©': { lat: 26.3344, lng: 127.8056 },
         'ç¥æˆ¶': { lat: 34.6901, lng: 135.1956 },
         'æ©«æ¿±': { lat: 35.4437, lng: 139.6380 },
         'å¥ˆè‰¯': { lat: 34.6851, lng: 135.8048 },
-        'å»?³¶': { lat: 34.3853, lng: 132.4553 },
+        'ï¿½?ï¿½ï¿½': { lat: 34.3853, lng: 132.4553 },
         'ä»™å°': { lat: 38.2682, lng: 140.8694 },
-        '?‘æ¾¤': { lat: 36.5613, lng: 136.6562 },
-        '?Šæœ¬': { lat: 32.8032, lng: 130.7079 },
-        '?·å?': { lat: 32.7503, lng: 129.8777 },
+        '?ï¿½æ¾¤': { lat: 36.5613, lng: 136.6562 },
+        '?ï¿½æœ¬': { lat: 32.8032, lng: 130.7079 },
+        '?ï¿½ï¿½?': { lat: 32.7503, lng: 129.8777 },
     },
-    '?“å?': {
+    '?ï¿½ï¿½?': {
         'é¦–çˆ¾': { lat: 37.5665, lng: 126.9780 },
-        '?œå±±': { lat: 35.1796, lng: 129.0756 },
-        'æ¿Ÿå?': { lat: 33.4996, lng: 126.5312 },
-        'ä»å?': { lat: 37.4563, lng: 126.7052 },
+        '?ï¿½å±±': { lat: 35.1796, lng: 129.0756 },
+        'æ¿Ÿï¿½?': { lat: 33.4996, lng: 126.5312 },
+        'ä»ï¿½?': { lat: 37.4563, lng: 126.7052 },
         'å¤§é‚±': { lat: 35.8714, lng: 128.6014 },
     },
-    'æ³°å?': {
-        '?¼è°·': { lat: 13.7563, lng: 100.5018 },
-        'æ¸…é?': { lat: 18.7883, lng: 98.9853 },
-        '?®å?å³?: { lat: 7.8804, lng: 98.3923 },
-        '?­é???: { lat: 12.9236, lng: 100.8825 },
+    'æ³°ï¿½?': {
+        '?ï¿½è°·': { lat: 13.7563, lng: 100.5018 },
+        'æ¸…ï¿½?': { lat: 18.7883, lng: 98.9853 },
+        '?ï¿½ï¿½?ï¿½?: { lat: 7.8804, lng: 98.3923 },
+        '?ï¿½ï¿½???: { lat: 12.9236, lng: 100.8825 },
     },
-    'è¶Šå?': {
+    'è¶Šï¿½?': {
         'æ²³å…§': { lat: 21.0278, lng: 105.8342 },
-        '?¡å??å?': { lat: 10.8231, lng: 106.6297 },
+        '?ï¿½ï¿½??ï¿½ï¿½?': { lat: 10.8231, lng: 106.6297 },
         'å³´æ¸¯': { lat: 16.0544, lng: 108.2022 },
     },
-    '?°å???: {
-        '?°å???: { lat: 1.3521, lng: 103.8198 },
+    '?ï¿½ï¿½???: {
+        '?ï¿½ï¿½???: { lat: 1.3521, lng: 103.8198 },
     },
-    'é¦¬ä?è¥¿ä?': {
-        '?‰é???: { lat: 3.1390, lng: 101.6869 },
-        'æª³å?': { lat: 5.4164, lng: 100.3327 },
+    'é¦¬ï¿½?è¥¿ï¿½?': {
+        '?ï¿½ï¿½???: { lat: 3.1390, lng: 101.6869 },
+        'æª³ï¿½?': { lat: 5.4164, lng: 100.3327 },
         'æ²™å·´': { lat: 5.9804, lng: 116.0735 },
     },
     'é¦™æ¸¯': {
         'é¦™æ¸¯': { lat: 22.3193, lng: 114.1694 },
     },
-    'æ¾³é?': {
-        'æ¾³é?': { lat: 22.1987, lng: 113.5439 },
+    'æ¾³ï¿½?': {
+        'æ¾³ï¿½?': { lat: 22.1987, lng: 113.5439 },
     },
-    'ç¾å?': {
-        'ç´ç?': { lat: 40.7128, lng: -74.0060 },
-        'æ´›æ?ç£?: { lat: 34.0522, lng: -118.2437 },
-        '?Šé?å±?: { lat: 37.7749, lng: -122.4194 },
-        '?‰æ–¯ç¶­å???: { lat: 36.1699, lng: -115.1398 },
+    'ç¾ï¿½?': {
+        'ç´ï¿½?': { lat: 40.7128, lng: -74.0060 },
+        'æ´›ï¿½?ï¿½?: { lat: 34.0522, lng: -118.2437 },
+        '?ï¿½ï¿½?ï¿½?: { lat: 37.7749, lng: -122.4194 },
+        '?ï¿½æ–¯ç¶­ï¿½???: { lat: 36.1699, lng: -115.1398 },
     },
-    '?±å?': {
-        '?«æ•¦': { lat: 51.5074, lng: -0.1278 },
+    '?ï¿½ï¿½?': {
+        '?ï¿½æ•¦': { lat: 51.5074, lng: -0.1278 },
     },
-    'æ³•å?': {
-        'å·´é?': { lat: 48.8566, lng: 2.3522 },
+    'æ³•ï¿½?': {
+        'å·´ï¿½?': { lat: 48.8566, lng: 2.3522 },
     },
     'æ¾³æ´²': {
-        '?ªæ¢¨': { lat: -33.8688, lng: 151.2093 },
+        '?ï¿½æ¢¨': { lat: -33.8688, lng: 151.2093 },
         'å¢¨çˆ¾??: { lat: -37.8136, lng: 144.9631 },
     },
 };
@@ -2452,7 +2452,7 @@ function initSegments() {
         if (saving) return;
         saving = true;
         $('#seg-save').disabled = true;
-        $('#seg-save').textContent = '?²å?ä¸?..';
+        $('#seg-save').textContent = '?ï¿½ï¿½?ï¿½?..';
 
         const country = $('#seg-country').value;
         let city = $('#seg-city').value;
@@ -2481,10 +2481,10 @@ function initSegments() {
         };
 
         if (!item.name || !item.city) {
-            alert('è«‹è‡³å°‘å¡«å¯«æ?ç¨‹å?ç¨±å??å?');
+            alert('è«‹è‡³å°‘å¡«å¯«ï¿½?ç¨‹ï¿½?ç¨±ï¿½??ï¿½ï¿½?');
             saving = false;
             $('#seg-save').disabled = false;
-            $('#seg-save').textContent = '?²å?';
+            $('#seg-save').textContent = '?ï¿½ï¿½?';
             return;
         }
 
@@ -2492,16 +2492,16 @@ function initSegments() {
         $('#segment-form').style.display = 'none';
         saving = false;
         $('#seg-save').disabled = false;
-        $('#seg-save').textContent = '?²å?';
+        $('#seg-save').textContent = '?ï¿½ï¿½?';
     });
 }
 
 function populateCountryDropdown() {
     const select = $('#seg-country');
     if (!select) return;
-    select.innerHTML = '<option value="">?¸æ??‹å®¶</option>' +
+    select.innerHTML = '<option value="">?ï¿½ï¿½??ï¿½å®¶</option>' +
         COUNTRY_LIST.map(c => `<option value="${c}">${c}</option>`).join('') +
-        '<option value="__custom__">?¶ä?ï¼ˆæ??•è¼¸?¥ï?</option>';
+        '<option value="__custom__">?ï¿½ï¿½?ï¼ˆï¿½??ï¿½è¼¸?ï¿½ï¿½?</option>';
 }
 
 function populateCityDropdown(country) {
@@ -2510,22 +2510,22 @@ function populateCityDropdown(country) {
     if (!select) return;
 
     if (!country || country === '__custom__') {
-        select.innerHTML = '<option value="">è«‹è¼¸?¥å?å¸?/option><option value="__custom__">?‹å?è¼¸å…¥</option>';
+        select.innerHTML = '<option value="">è«‹è¼¸?ï¿½ï¿½?ï¿½?/option><option value="__custom__">?ï¿½ï¿½?è¼¸å…¥</option>';
         select.value = '__custom__';
         customInput.style.display = 'block';
         return;
     }
 
     const cities = getCitiesForCountry(country);
-    select.innerHTML = '<option value="">?¸æ??å?</option>' +
+    select.innerHTML = '<option value="">?ï¿½ï¿½??ï¿½ï¿½?</option>' +
         cities.map(c => `<option value="${c}">${c}</option>`).join('') +
-        '<option value="__custom__">?¶ä?ï¼ˆæ??•è¼¸?¥ï?</option>';
+        '<option value="__custom__">?ï¿½ï¿½?ï¼ˆï¿½??ï¿½è¼¸?ï¿½ï¿½?</option>';
     customInput.style.display = 'none';
 }
 
 function showSegmentForm(item) {
     $('#segment-form').style.display = 'block';
-    $('#segment-form-title').textContent = item ? 'ç·¨è¼¯?…é€? : '?°å??…é€?;
+    $('#segment-form-title').textContent = item ? 'ç·¨è¼¯?ï¿½ï¿½? : '?ï¿½ï¿½??ï¿½ï¿½?;
     $('#seg-name').value = item ? item.name : '';
 
     // Set country dropdown
@@ -2572,7 +2572,7 @@ function renderSegmentsList() {
     if (!container) return;
 
     if (segments.length === 0) {
-        container.innerHTML = '<p class="hint">å°šæœªè¨­å??…é€”è?è¨Šï?è«‹æ–°å¢ä»¥?–å?å¤©æ°£?Œä?å®¿è???/p>';
+        container.innerHTML = '<p class="hint">å°šæœªè¨­ï¿½??ï¿½é€”ï¿½?è¨Šï¿½?è«‹æ–°å¢ä»¥?ï¿½ï¿½?å¤©æ°£?ï¿½ï¿½?å®¿ï¿½???/p>';
         return;
     }
 
@@ -2581,11 +2581,11 @@ function renderSegmentsList() {
             <div class="segment-info">
                 <div class="segment-city">${seg.country ? seg.country + ' Â· ' : ''}${seg.city}</div>
                 <div class="segment-dates">${formatSegDate(seg.startDate)} ~ ${formatSegDate(seg.endDate)}</div>
-                ${seg.hotelName ? `<div class="segment-hotel">?¨ ${seg.hotelName}</div>` : ''}
+                ${seg.hotelName ? `<div class="segment-hotel">?ï¿½ï¿½ ${seg.hotelName}</div>` : ''}
             </div>
             <div class="sched-actions">
-                <button class="sched-action-btn edit" onclick="editSegment(${idx})">?ï?</button>
-                <button class="sched-action-btn delete" onclick="deleteSegmentConfirm(${idx})">??ï¸?/button>
+                <button class="sched-action-btn edit" onclick="editSegment(${idx})">?ï¿½ï¿½?</button>
+                <button class="sched-action-btn delete" onclick="deleteSegmentConfirm(${idx})">??ï¿½?/button>
             </div>
         </div>
     `).join('');
@@ -2597,7 +2597,7 @@ function editSegment(idx) {
 }
 
 async function deleteSegmentConfirm(idx) {
-    if (!confirm(`ç¢ºå??ªé™¤??{segments[idx].name}?ï?`)) return;
+    if (!confirm(`ç¢ºï¿½??ï¿½é™¤??{segments[idx].name}?ï¿½ï¿½?`)) return;
     await saveSegment('delete', null, idx);
 }
 
@@ -2629,14 +2629,14 @@ async function saveSegment(action, item, idx) {
 
         renderSegmentsList();
         loadTripWeatherBySegments();
-        alert(action === 'delete' ? '??å·²åˆª?? : '??å·²å„²å­?);
+        alert(action === 'delete' ? '??å·²åˆª?? : '??å·²å„²ï¿½?);
     } catch (err) {
         addToSyncQueue(payload);
         if (action === 'add') segments.push({ ...item, idx: segments.length });
         else if (action === 'update') segments[idx] = { ...segments[idx], ...item };
         else if (action === 'delete') segments.splice(idx, 1);
         renderSegmentsList();
-        alert('? ï? å·²æš«å­˜æœ¬?°ï?ç¶²è·¯?¢å¾©å¾Œè‡ª?•å?æ­¥ï?');
+        alert('?ï¿½ï¿½? å·²æš«å­˜æœ¬?ï¿½ï¿½?ç¶²è·¯?ï¿½å¾©å¾Œè‡ª?ï¿½ï¿½?æ­¥ï¿½?');
     }
 }
 
@@ -2663,7 +2663,7 @@ async function loadTripWeatherBySegments() {
     });
 
     section.style.display = 'block';
-    container.innerHTML = '<p class="hint">è¼‰å…¥å¤©æ°£ä¸?..</p>';
+    container.innerHTML = '<p class="hint">è¼‰å…¥å¤©æ°£ï¿½?..</p>';
 
     const allDays = [];
     const rainyDays = [];
@@ -2682,7 +2682,7 @@ async function loadTripWeatherBySegments() {
                 allDays.push({
                     type: 'day',
                     dayLabel: currentDate.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric', weekday: 'short' }),
-                    available: false, error: true, errorMsg: `?¡æ??¥åˆ°??{seg.city}?ç?æ°?±¡`
+                    available: false, error: true, errorMsg: `?ï¿½ï¿½??ï¿½åˆ°??{seg.city}?ï¿½ï¿½?ï¿½?ï¿½ï¿½`
                 });
                 currentDate.setDate(currentDate.getDate() + 1);
             }
@@ -2732,7 +2732,7 @@ async function loadTripWeatherBySegments() {
     // Rain alert
     if (rainyDays.length > 0) {
         const rainyList = rainyDays.map(d => `${d.city} ${d.dayLabel}`).join('??);
-        alertEl.textContent = `???é?ï¼?{rainyList} ?é›¨æ©Ÿç?é«˜ï?è¨˜å?å¸¶å?ï¼`;
+        alertEl.textContent = `???ï¿½ï¿½?ï¿½?{rainyList} ?ï¿½é›¨æ©Ÿï¿½?é«˜ï¿½?è¨˜ï¿½?å¸¶ï¿½?ï¼`;
         alertEl.style.display = 'block';
     } else {
         alertEl.style.display = 'none';
@@ -2741,12 +2741,12 @@ async function loadTripWeatherBySegments() {
     // Render
     container.innerHTML = allDays.map(day => {
         if (day.type === 'header') {
-            return `<div class="weather-city-header">?? ${day.city}ï¼?{formatSegDate(day.startDate)} ~ ${formatSegDate(day.endDate)}ï¼?/div>`;
+            return `<div class="weather-city-header">?? ${day.city}ï¿½?{formatSegDate(day.startDate)} ~ ${formatSegDate(day.endDate)}ï¿½?/div>`;
         }
         if (!day.available && day.available !== undefined) {
-            return `<div class="weather-day" style="opacity:0.5;"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">??/span><span class="weather-temp" style="flex:1;">${day.errorMsg || (day.error ? 'è¼‰å…¥å¤±æ?' : 'å°šç„¡?å ±')}</span></div>`;
+            return `<div class="weather-day" style="opacity:0.5;"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">??/span><span class="weather-temp" style="flex:1;">${day.errorMsg || (day.error ? 'è¼‰å…¥å¤±ï¿½?' : 'å°šç„¡?ï¿½å ±')}</span></div>`;
         }
-        return `<div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">${day.emoji}</span><span class="weather-temp">${day.maxTemp}Â° / ${day.minTemp}Â°</span><span class="weather-rain">?é›¨ ${day.rain}%</span></div>`;
+        return `<div class="weather-day ${day.rain >= 50 ? 'rainy' : ''}"><span class="weather-date">${day.dayLabel}</span><span class="weather-icon">${day.emoji}</span><span class="weather-temp">${day.maxTemp}Â° / ${day.minTemp}Â°</span><span class="weather-rain">?ï¿½é›¨ ${day.rain}%</span></div>`;
     }).join('');
 }
 
@@ -2762,10 +2762,10 @@ function initEmergencyFromSegments() {
             currentSegEl.innerHTML = `
                 <div class="segment-card" style="border-left:4px solid var(--primary);margin-bottom:12px;">
                     <div class="segment-info">
-                        <div class="segment-city">?®å?è¡Œç?ï¼?{currentSeg.name}</div>
-                        <div class="segment-dates">${currentSeg.city}ï¼?{formatSegDate(currentSeg.startDate)} ~ ${formatSegDate(currentSeg.endDate)}ï¼?/div>
-                        ${currentSeg.hotelName ? `<div class="segment-hotel">?¨ ${currentSeg.hotelName}</div>` : ''}
-                        ${currentSeg.hotelAddress ? `<div class="segment-hotel">?“« ${currentSeg.hotelAddress}</div>` : ''}
+                        <div class="segment-city">?ï¿½ï¿½?è¡Œï¿½?ï¿½?{currentSeg.name}</div>
+                        <div class="segment-dates">${currentSeg.city}ï¿½?{formatSegDate(currentSeg.startDate)} ~ ${formatSegDate(currentSeg.endDate)}ï¿½?/div>
+                        ${currentSeg.hotelName ? `<div class="segment-hotel">?ï¿½ï¿½ ${currentSeg.hotelName}</div>` : ''}
+                        ${currentSeg.hotelAddress ? `<div class="segment-hotel">?ï¿½ï¿½ ${currentSeg.hotelAddress}</div>` : ''}
                         ${currentSeg.hotelPhone ? `<div class="segment-hotel">?? <a href="tel:${currentSeg.hotelPhone}">${currentSeg.hotelPhone}</a></div>` : ''}
                     </div>
                 </div>
@@ -2774,11 +2774,11 @@ function initEmergencyFromSegments() {
 
         if (allHotelsEl && segments.length > 1) {
             allHotelsEl.innerHTML = `
-                <div class="tool-header" style="font-size:0.85rem;">?¨ ?€?‰ä?å®?/div>
+                <div class="tool-header" style="font-size:0.85rem;">?ï¿½ï¿½ ?ï¿½?ï¿½ï¿½?ï¿½?/div>
                 ${segments.map(s => `
                     <div class="emergency-item" style="flex-direction:column;align-items:flex-start;gap:2px;">
-                        <span style="font-weight:500;">${s.name} Â· ${s.city}ï¼?{formatSegDate(s.startDate)} ~ ${formatSegDate(s.endDate)}ï¼?/span>
-                        <span class="emergency-value">${s.hotelName || '?ªè¨­å®?}</span>
+                        <span style="font-weight:500;">${s.name} Â· ${s.city}ï¿½?{formatSegDate(s.startDate)} ~ ${formatSegDate(s.endDate)}ï¿½?/span>
+                        <span class="emergency-value">${s.hotelName || '?ï¿½è¨­ï¿½?}</span>
                         ${s.hotelPhone ? `<a href="tel:${s.hotelPhone}" class="emergency-value">${s.hotelPhone}</a>` : ''}
                     </div>
                 `).join('')}
@@ -2788,10 +2788,10 @@ function initEmergencyFromSegments() {
 }
 
 
-// ==================== è¡Œç?ç®¡ç? ====================
+// ==================== è¡Œï¿½?ç®¡ï¿½? ====================
 
 let schedManageDate = new Date();
-let editingIndex = null; // null = ?°å?, number = ç·¨è¼¯ç¬¬å¹¾??
+let editingIndex = null; // null = ?ï¿½ï¿½?, number = ç·¨è¼¯ç¬¬å¹¾??
 
 function initScheduleManage() {
     updateSchedDateDisplay();
@@ -2830,12 +2830,12 @@ function initScheduleManage() {
         if (saving) return;
         // Only block save for update/delete during sync, not for add
         if (_isWriting && editingIndex !== null) {
-            alert('??è«‹ç?å¾…ä?ä¸€ç­†å?æ­¥å???);
+            alert('??è«‹ï¿½?å¾…ï¿½?ä¸€ç­†ï¿½?æ­¥ï¿½???);
             return;
         }
         saving = true;
         $('#sched-save').disabled = true;
-        $('#sched-save').textContent = '?²å?ä¸?..';
+        $('#sched-save').textContent = '?ï¿½ï¿½?ï¿½?..';
 
         const item = {
             date: $('#sched-date').value,
@@ -2847,10 +2847,10 @@ function initScheduleManage() {
         };
 
         if (!item.date || !item.startTime || !item.place) {
-            alert('è«‹è‡³å°‘å¡«å¯«æ—¥?Ÿã€é?å§‹æ??“å??°é?');
+            alert('è«‹è‡³å°‘å¡«å¯«æ—¥?ï¿½ã€ï¿½?å§‹ï¿½??ï¿½ï¿½??ï¿½ï¿½?');
             saving = false;
             $('#sched-save').disabled = false;
-            $('#sched-save').textContent = '?²å?';
+            $('#sched-save').textContent = '?ï¿½ï¿½?';
             return;
         }
 
@@ -2863,7 +2863,7 @@ function initScheduleManage() {
         $('#schedule-form').style.display = 'none';
         saving = false;
         $('#sched-save').disabled = false;
-        $('#sched-save').textContent = '?²å?';
+        $('#sched-save').textContent = '?ï¿½ï¿½?';
     });
 
     // Show sync queue status
@@ -2893,7 +2893,7 @@ function renderScheduleEditList() {
     });
 
     if (daySchedule.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="emoji">?“­</div><p>?™å¤©æ²’æ?è¡Œç?</p></div>';
+        container.innerHTML = '<div class="empty-state"><div class="emoji">?ï¿½ï¿½</div><p>?ï¿½å¤©æ²’ï¿½?è¡Œï¿½?</p></div>';
         return;
     }
 
@@ -2904,9 +2904,9 @@ function renderScheduleEditList() {
                 <div class="sched-place">${item.place}</div>
             </div>
             <div class="sched-actions">
-                ${item._pending ? '<span class="hint">?Œæ­¥ä¸?..</span>' : `
-                <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">?ï?</button>
-                <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">??ï¸?/button>
+                ${item._pending ? '<span class="hint">?ï¿½æ­¥ï¿½?..</span>' : `
+                <button class="sched-action-btn edit" onclick="editScheduleItem(${item._idx})">?ï¿½ï¿½?</button>
+                <button class="sched-action-btn delete" onclick="deleteScheduleItemConfirm(${item._idx})">??ï¿½?/button>
                 `}
             </div>
         </div>
@@ -2915,7 +2915,7 @@ function renderScheduleEditList() {
 
 function showScheduleForm(item) {
     $('#schedule-form').style.display = 'block';
-    $('#schedule-form-title').textContent = item ? 'ç·¨è¼¯è¡Œç?' : '?°å?è¡Œç?';
+    $('#schedule-form-title').textContent = item ? 'ç·¨è¼¯è¡Œï¿½?' : '?ï¿½ï¿½?è¡Œï¿½?';
 
     const dateStr = `${schedManageDate.getFullYear()}-${String(schedManageDate.getMonth()+1).padStart(2,'0')}-${String(schedManageDate.getDate()).padStart(2,'0')}`;
     $('#sched-date').value = item ? toInputDate(item.date.replace(/\//g, '-')) : dateStr;
@@ -2933,11 +2933,11 @@ function editScheduleItem(idx) {
 
 async function deleteScheduleItemConfirm(idx) {
     if (_isWriting) {
-        alert('??è«‹ç?å¾…ä?ä¸€ç­†å?æ­¥å???);
+        alert('??è«‹ï¿½?å¾…ï¿½?ä¸€ç­†ï¿½?æ­¥ï¿½???);
         return;
     }
     const item = scheduleData[idx];
-    if (!confirm(`ç¢ºå??ªé™¤??{item.place}?ï?`)) return;
+    if (!confirm(`ç¢ºï¿½??ï¿½é™¤??{item.place}?ï¿½ï¿½?`)) return;
 
     await saveScheduleItem('delete', null, idx);
 }
@@ -2995,13 +2995,13 @@ async function saveScheduleItem(action, item, idx) {
             if (result.error) {
                 addToSyncQueue(payload);
                 showSyncStatus();
-                alert('? ï? ?°å?å¯«å…¥å¤±æ?ï¼? + result.error);
+                alert('?ï¿½ï¿½? ?ï¿½ï¿½?å¯«å…¥å¤±ï¿½?ï¿½? + result.error);
             }
             silentLoadData();
         }).catch(err => {
             addToSyncQueue(payload);
             showSyncStatus();
-            alert('? ï? ç¶²è·¯?°å¸¸ï¼Œå·²?«å??¬åœ°');
+            alert('?ï¿½ï¿½? ç¶²è·¯?ï¿½å¸¸ï¼Œå·²?ï¿½ï¿½??ï¿½åœ°');
         });
     } else {
         // Update/Delete need queue to prevent row conflicts
@@ -3026,10 +3026,10 @@ function queueServerWrite(payload, action) {
             let result = {};
             try { result = await res.json(); } catch (e) { result = { success: true }; }
             if (result.error) {
-                console.error('?Œæ™¯å¯«å…¥å¤±æ?:', result.error);
+                console.error('?ï¿½æ™¯å¯«å…¥å¤±ï¿½?:', result.error);
                 addToSyncQueue(payload);
                 showSyncStatus();
-                alert('? ï? å¯«å…¥ Sheet å¤±æ?ï¼? + result.error + '\nè³‡æ?å·²æš«å­?);
+                alert('?ï¿½ï¿½? å¯«å…¥ Sheet å¤±ï¿½?ï¿½? + result.error + '\nè³‡ï¿½?å·²æš«ï¿½?);
             } else if (action === 'delete') {
                 // After delete, refresh to get correct uuid mapping
                 return silentLoadData();
@@ -3039,10 +3039,10 @@ function queueServerWrite(payload, action) {
                 return silentLoadData();
             }
         }).catch(err => {
-            console.error('?Œæ™¯å¯«å…¥å¤±æ?:', err);
+            console.error('?ï¿½æ™¯å¯«å…¥å¤±ï¿½?:', err);
             addToSyncQueue(payload);
             showSyncStatus();
-            alert('? ï? ç¶²è·¯?°å¸¸ï¼Œè??™å·²?«å??¬åœ°');
+            alert('?ï¿½ï¿½? ç¶²è·¯?ï¿½å¸¸ï¼Œï¿½??ï¿½å·²?ï¿½ï¿½??ï¿½åœ°');
         }).finally(() => {
             _isWriting = false;
         });
@@ -3067,7 +3067,7 @@ function showSyncStatus() {
     const queue = getSyncQueue();
     if (queue.length > 0) {
         el.style.display = 'block';
-        el.textContent = `? ï? ${queue.length} ç­†å??Œæ­¥`;
+        el.textContent = `?ï¿½ï¿½? ${queue.length} ç­†ï¿½??ï¿½æ­¥`;
         if (actionsEl) actionsEl.style.display = 'block';
     } else {
         el.style.display = 'none';
@@ -3076,26 +3076,26 @@ function showSyncStatus() {
 }
 
 function clearSyncQueue() {
-    if (!confirm('ç¢ºå?æ¸…é™¤?€?‰å??Œæ­¥?…ç›®ï¼Ÿï??™ä??ä?å°‡ä??ƒè¢«?Œæ­¥??Google Sheetsï¼?)) return;
+    if (!confirm('ç¢ºï¿½?æ¸…é™¤?ï¿½?ï¿½ï¿½??ï¿½æ­¥?ï¿½ç›®ï¼Ÿï¿½??ï¿½ï¿½??ï¿½ï¿½?å°‡ï¿½??ï¿½è¢«?ï¿½æ­¥??Google Sheetsï¿½?)) return;
     localStorage.setItem('syncQueue', '[]');
     showSyncStatus();
-    alert('??å·²æ???);
+    alert('??å·²ï¿½???);
 }
 
 async function retrySyncQueue() {
     const queue = getSyncQueue();
     if (queue.length === 0) {
-        alert('æ²’æ?å¾…å?æ­¥ç??…ç›®');
+        alert('æ²’ï¿½?å¾…ï¿½?æ­¥ï¿½??ï¿½ç›®');
         return;
     }
-    alert(`?‹å??Œæ­¥ ${queue.length} ç­?..`);
+    alert(`?ï¿½ï¿½??ï¿½æ­¥ ${queue.length} ï¿½?..`);
     await processSyncQueue();
     const remaining = getSyncQueue();
     if (remaining.length === 0) {
-        alert('???¨éƒ¨?Œæ­¥?å?ï¼?);
+        alert('???ï¿½éƒ¨?ï¿½æ­¥?ï¿½ï¿½?ï¿½?);
         silentLoadData();
     } else {
-        alert(`? ï? ?„æ? ${remaining.length} ç­†å?æ­¥å¤±?—`);
+        alert(`?ï¿½ï¿½? ?ï¿½ï¿½? ${remaining.length} ç­†ï¿½?æ­¥å¤±?ï¿½`);
     }
     showSyncStatus();
 }
@@ -3130,7 +3130,7 @@ async function processSyncQueue() {
 }
 
 
-// ==================== AI ?©æ? (Gemini via Apps Script Proxy) ====================
+// ==================== AI ?ï¿½ï¿½? (Gemini via Apps Script Proxy) ====================
 
 const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 const GEMINI_MODEL_FALLBACK = 'gemini-2.5-flash';
@@ -3173,10 +3173,10 @@ function initAI() {
     const header = $('.app-header h1');
     header.addEventListener('touchstart', () => {
         pressTimer = setTimeout(() => {
-            const key = prompt('è¨­å? Gemini API Keyï¼?, localStorage.getItem('geminiApiKey') || '');
+            const key = prompt('è¨­ï¿½? Gemini API Keyï¿½?, localStorage.getItem('geminiApiKey') || '');
             if (key !== null) {
                 localStorage.setItem('geminiApiKey', key.trim());
-                alert('API Key å·²æ›´?°ï?');
+                alert('API Key å·²æ›´?ï¿½ï¿½?');
             }
         }, 2000);
     });
@@ -3190,7 +3190,7 @@ let isRecording = false;
 
 function toggleVoiceInput() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-        alert('ä½ ç??è¦½?¨ä??¯æ´èªéŸ³è¼¸å…¥');
+        alert('ä½ ï¿½??ï¿½è¦½?ï¿½ï¿½??ï¿½æ´èªéŸ³è¼¸å…¥');
         return;
     }
 
@@ -3211,7 +3211,7 @@ function toggleVoiceInput() {
     recognition.onstart = () => {
         isRecording = true;
         voiceBtn.classList.add('recording');
-        input.placeholder = '??ï¸?æ­?œ¨??..';
+        input.placeholder = '??ï¿½?ï¿½?ï¿½ï¿½??..';
     };
 
     recognition.onresult = (event) => {
@@ -3246,7 +3246,7 @@ function stopVoiceInput() {
     isRecording = false;
     const voiceBtn = $('#ai-voice');
     voiceBtn.classList.remove('recording');
-    $('#ai-input').placeholder = '?“å??–æ??§ç¿»è­?..';
+    $('#ai-input').placeholder = '?ï¿½ï¿½??ï¿½ï¿½??ï¿½ç¿»ï¿½?..';
     if (recognition) {
         recognition.stop();
         recognition = null;
@@ -3271,29 +3271,29 @@ function handleQuickAction(action) {
 function triggerFoodRecommendation() {
     const now = new Date();
     const hour = now.getHours();
-    let mealType = '?ƒç?';
-    if (hour < 10) mealType = '?©é?';
-    else if (hour < 14) mealType = '?ˆé?';
-    else if (hour < 17) mealType = 'ä¸‹å??¶æ?é»å?';
-    else mealType = '?šé?';
+    let mealType = '?ï¿½ï¿½?';
+    if (hour < 10) mealType = '?ï¿½ï¿½?';
+    else if (hour < 14) mealType = '?ï¿½ï¿½?';
+    else if (hour < 17) mealType = 'ä¸‹ï¿½??ï¿½ï¿½?é»ï¿½?';
+    else mealType = '?ï¿½ï¿½?';
 
-    let msg = `?¾åœ¨${hour}é»ä?ï¼Œæ??³å?${mealType}?‚`;
+    let msg = `?ï¿½åœ¨${hour}é»ï¿½?ï¼Œï¿½??ï¿½ï¿½?${mealType}?ï¿½`;
     if (currentPosition) {
-        msg += `?‘ç›®?åœ¨ ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)} ?„è??‚`;
+        msg += `?ï¿½ç›®?ï¿½åœ¨ ${currentPosition.lat.toFixed(4)}, ${currentPosition.lng.toFixed(4)} ?ï¿½ï¿½??ï¿½`;
     }
-    msg += '?¹æ??‘ç?ç¾é?æ¸…å–®ï¼Œæ¨?¦æ??¾åœ¨?¯ä»¥?»å“ªå®¶ï??ƒæ…®?Ÿæ¥­?‚é??Œè??¢ã€?;
+    msg += '?ï¿½ï¿½??ï¿½ï¿½?ç¾ï¿½?æ¸…å–®ï¼Œæ¨?ï¿½ï¿½??ï¿½åœ¨?ï¿½ä»¥?ï¿½å“ªå®¶ï¿½??ï¿½æ…®?ï¿½æ¥­?ï¿½ï¿½??ï¿½ï¿½??ï¿½ï¿½?;
 
     $('#ai-input').value = msg;
     sendAIMessage();
 }
 
 function triggerTranslateMode() {
-    const text = prompt('è¼¸å…¥ä½ è?ç¿»è­¯?„ä¸­?‡ï?\nï¼ˆæ?ç¿»æ??¥æ?ï¼Œå¤§å­—é¡¯ç¤ºçµ¦åº—å“¡?‹ï?');
+    const text = prompt('è¼¸å…¥ä½ ï¿½?ç¿»è­¯?ï¿½ä¸­?ï¿½ï¿½?\nï¼ˆï¿½?ç¿»ï¿½??ï¿½ï¿½?ï¼Œå¤§å­—é¡¯ç¤ºçµ¦åº—å“¡?ï¿½ï¿½?');
     if (!text || !text.trim()) return;
 
     // Check API key
     if (!localStorage.getItem('geminiApiKey')) {
-        const key = prompt('é¦–æ¬¡ä½¿ç”¨è«‹è¼¸??Gemini API Keyï¼š\nï¼ˆåˆ° https://aistudio.google.com/apikey ?è²»?³è?ï¼?);
+        const key = prompt('é¦–æ¬¡ä½¿ç”¨è«‹è¼¸??Gemini API Keyï¼š\nï¼ˆåˆ° https://aistudio.google.com/apikey ?ï¿½è²»?ï¿½ï¿½?ï¿½?);
         if (key && key.trim()) {
             localStorage.setItem('geminiApiKey', key.trim());
         } else {
@@ -3301,25 +3301,25 @@ function triggerTranslateMode() {
         }
     }
 
-    appendAIMessage(`?? ç¿»è­¯ï¼?{text}`, 'user');
-    const loadingEl = appendAIMessage('ç¿»è­¯ä¸?..', 'bot loading');
+    appendAIMessage(`?? ç¿»è­¯ï¿½?{text}`, 'user');
+    const loadingEl = appendAIMessage('ç¿»è­¯ï¿½?..', 'bot loading');
 
     callGeminiTranslate(text.trim()).then(result => {
         loadingEl.remove();
         // Show translation in big readable format with speak button
         const speakId = 'speak-' + Date.now();
         const html = `
-            <div class="translation-label">?‡¹?‡¼ ä¸­æ?</div>
+            <div class="translation-label">?ï¿½ï¿½?ï¿½ï¿½ ä¸­ï¿½?</div>
             <p>${text}</p>
             <div class="translation-block">
-                <div class="translation-label">?‡¯?‡µ ?¥æ? <button class="speak-btn" onclick="speakJapanese('${speakId}')">?? ?­æ”¾</button></div>
+                <div class="translation-label">?ï¿½ï¿½?ï¿½ï¿½ ?ï¿½ï¿½? <button class="speak-btn" onclick="speakJapanese('${speakId}')">?? ?ï¿½æ”¾</button></div>
                 <span id="${speakId}">${result}</span>
             </div>
         `;
         appendAIMessageRaw(html, 'bot');
     }).catch(err => {
         loadingEl.remove();
-        appendAIMessage(`??ç¿»è­¯å¤±æ?ï¼?{err.message}`, 'bot');
+        appendAIMessage(`??ç¿»è­¯å¤±ï¿½?ï¿½?{err.message}`, 'bot');
     });
 }
 
@@ -3335,7 +3335,7 @@ async function callGeminiTranslate(text) {
     const requestBody = {
         contents: [{
             role: 'user',
-            parts: [{ text: `è«‹æ?ä»¥ä?ä¸­æ?ç¿»è­¯?æ—¥?‡ã€‚åª?è??¥æ?ç¿»è­¯çµæ?ï¼Œä?è¦å??¶ä?èªªæ??‚å??œæ˜¯å°è©±?´æ™¯ï¼Œæ?ä¾›æ??ªç„¶?„æ—¥?‡èªªæ³•ã€‚\n\n${text}` }]
+            parts: [{ text: `è«‹ï¿½?ä»¥ï¿½?ä¸­ï¿½?ç¿»è­¯?ï¿½æ—¥?ï¿½ã€‚åª?ï¿½ï¿½??ï¿½ï¿½?ç¿»è­¯çµï¿½?ï¼Œï¿½?è¦ï¿½??ï¿½ï¿½?èªªï¿½??ï¿½ï¿½??ï¿½æ˜¯å°è©±?ï¿½æ™¯ï¼Œï¿½?ä¾›ï¿½??ï¿½ç„¶?ï¿½æ—¥?ï¿½èªªæ³•ã€‚\n\n${text}` }]
         }],
         generationConfig: {
             temperature: 0.3,
@@ -3350,10 +3350,10 @@ async function callGeminiTranslate(text) {
     }
 
     if (!data || data.error) {
-        throw new Error(data?.error?.message || 'ç¿»è­¯å¤±æ?');
+        throw new Error(data?.error?.message || 'ç¿»è­¯å¤±ï¿½?');
     }
 
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'ç¿»è­¯å¤±æ?';
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'ç¿»è­¯å¤±ï¿½?';
 }
 
 // --- Text to Speech (Japanese) ---
@@ -3365,7 +3365,7 @@ function speakJapanese(elementId) {
     if (!text) return;
 
     if (!('speechSynthesis' in window)) {
-        alert('ä½ ç??è¦½?¨ä??¯æ´èªéŸ³?­æ”¾');
+        alert('ä½ ï¿½??ï¿½è¦½?ï¿½ï¿½??ï¿½æ´èªéŸ³?ï¿½æ”¾');
         return;
     }
 
@@ -3391,7 +3391,7 @@ async function sendAIMessage() {
 
     // Check API key
     if (!localStorage.getItem('geminiApiKey')) {
-        const key = prompt('é¦–æ¬¡ä½¿ç”¨è«‹è¼¸??Gemini API Keyï¼š\nï¼ˆåˆ° https://aistudio.google.com/apikey ?è²»?³è?ï¼?);
+        const key = prompt('é¦–æ¬¡ä½¿ç”¨è«‹è¼¸??Gemini API Keyï¼š\nï¼ˆåˆ° https://aistudio.google.com/apikey ?ï¿½è²»?ï¿½ï¿½?ï¿½?);
         if (key && key.trim()) {
             localStorage.setItem('geminiApiKey', key.trim());
         } else {
@@ -3404,7 +3404,7 @@ async function sendAIMessage() {
     input.value = '';
 
     // Show loading
-    const loadingEl = appendAIMessage('?è€ƒä¸­...', 'bot loading');
+    const loadingEl = appendAIMessage('?ï¿½è€ƒä¸­...', 'bot loading');
 
     try {
         const response = await callGemini(message);
@@ -3412,7 +3412,7 @@ async function sendAIMessage() {
         appendAIMessage(response, 'bot');
     } catch (err) {
         loadingEl.remove();
-        appendAIMessage(`???¼ç??¯èª¤ï¼?{err.message}`, 'bot');
+        appendAIMessage(`???ï¿½ï¿½??ï¿½èª¤ï¿½?{err.message}`, 'bot');
         console.error('Gemini API error:', err);
     }
 }
@@ -3443,25 +3443,25 @@ function buildSystemContext() {
     // Determine current segment
     const currentSeg = getCurrentSegment();
 
-    let context = `ä½ æ˜¯ä¸€?‹æ??Šè?ç¨‹åŠ©?‹ã€‚ç¾?¨ç??‚é???${today} ${currentTime}?‚`;
+    let context = `ä½ æ˜¯ä¸€?ï¿½ï¿½??ï¿½ï¿½?ç¨‹åŠ©?ï¿½ã€‚ç¾?ï¿½ï¿½??ï¿½ï¿½???${today} ${currentTime}?ï¿½`;
 
     if (currentSeg) {
-        context += `\n?®å??€?¨æ®µ?½ï?${currentSeg.country} ${currentSeg.city}ï¼?{currentSeg.startDate} ~ ${currentSeg.endDate}ï¼‰`;
+        context += `\n?ï¿½ï¿½??ï¿½?ï¿½æ®µ?ï¿½ï¿½?${currentSeg.country} ${currentSeg.city}ï¿½?{currentSeg.startDate} ~ ${currentSeg.endDate}ï¼‰`;
         if (currentSeg.hotelName) {
-            context += `\nä½å®¿ï¼?{currentSeg.hotelName}ï¼?{currentSeg.hotelAddress}ï¼‰`;
+            context += `\nä½å®¿ï¿½?{currentSeg.hotelName}ï¿½?{currentSeg.hotelAddress}ï¼‰`;
         }
     }
 
     if (currentPosition) {
-        context += `\nä½¿ç”¨??GPS ä½ç½®ï¼?{currentPosition.lat.toFixed(5)}, ${currentPosition.lng.toFixed(5)}`;
+        context += `\nä½¿ç”¨??GPS ä½ç½®ï¿½?{currentPosition.lat.toFixed(5)}, ${currentPosition.lng.toFixed(5)}`;
     }
 
     // Today's schedule only
     const todaySchedule = scheduleData.filter(item => normalizeDate(item.date) === today);
     if (todaySchedule.length > 0) {
-        context += '\n\n?ä?å¤©ç?è¡Œç??‘\n';
+        context += '\n\n?ï¿½ï¿½?å¤©ï¿½?è¡Œï¿½??ï¿½\n';
         todaySchedule.forEach(item => {
-            context += `- ${item.startTime}~${item.endTime} ${item.place}ï¼?{item.address}ï¼?{item.notes ? '?™è¨»ï¼? + item.notes : ''}\n`;
+            context += `- ${item.startTime}~${item.endTime} ${item.place}ï¿½?{item.address}ï¿½?{item.notes ? '?ï¿½è¨»ï¿½? + item.notes : ''}\n`;
         });
     }
 
@@ -3471,9 +3471,9 @@ function buildSystemContext() {
     const tomorrowStr = formatDate(tomorrow);
     const tomorrowSchedule = scheduleData.filter(item => normalizeDate(item.date) === tomorrowStr);
     if (tomorrowSchedule.length > 0) {
-        context += '\n\n?æ?å¤©ç?è¡Œç??‘\n';
+        context += '\n\n?ï¿½ï¿½?å¤©ï¿½?è¡Œï¿½??ï¿½\n';
         tomorrowSchedule.forEach(item => {
-            context += `- ${item.startTime}~${item.endTime} ${item.place}ï¼?{item.address}ï¼?{item.notes ? '?™è¨»ï¼? + item.notes : ''}\n`;
+            context += `- ${item.startTime}~${item.endTime} ${item.place}ï¿½?{item.address}ï¿½?{item.notes ? '?ï¿½è¨»ï¿½? + item.notes : ''}\n`;
         });
     }
 
@@ -3491,12 +3491,12 @@ function buildSystemContext() {
             }
         }
         relevantFood = relevantFood.slice(0, 30);
-        context += '\n\n?ç?é£Ÿæ??®ã€‘\n';
+        context += '\n\n?ï¿½ï¿½?é£Ÿï¿½??ï¿½ã€‘\n';
         relevantFood.forEach(item => {
-            context += `- ${item.name}ï¼?{item.address || ''}ï¼?{item.type || ''}${item.recommend ? ' ?¨è–¦ï¼? + item.recommend : ''}\n`;
+            context += `- ${item.name}ï¿½?{item.address || ''}ï¿½?{item.type || ''}${item.recommend ? ' ?ï¿½è–¦ï¿½? + item.recommend : ''}\n`;
         });
         if (relevantFood.length < foodList.length) {
-            context += `ï¼ˆå??—å‡º${currentSeg ? currentSeg.city : ''}?¸é? ${relevantFood.length} å®¶ï???${foodList.length} å®¶ï?\n`;
+            context += `ï¼ˆï¿½??ï¿½å‡º${currentSeg ? currentSeg.city : ''}?ï¿½ï¿½? ${relevantFood.length} å®¶ï¿½???${foodList.length} å®¶ï¿½?\n`;
         }
     }
 
@@ -3508,13 +3508,13 @@ function buildSystemContext() {
             if (cityPlaces.length > 0) relevantPlaces = cityPlaces;
         }
         relevantPlaces = relevantPlaces.slice(0, 20);
-        context += '\n\n?æ™¯é»æ??®ã€‘\n';
+        context += '\n\n?ï¿½æ™¯é»ï¿½??ï¿½ã€‘\n';
         relevantPlaces.forEach(item => {
-            context += `- ${item.place}ï¼?{item.address || ''}ï¼?{item.type || ''}\n`;
+            context += `- ${item.place}ï¿½?{item.address || ''}ï¿½?{item.type || ''}\n`;
         });
     }
 
-    context += '\n\nè«‹ç”¨ç¹é?ä¸­æ??ç??‚æ ¹?šä»¥ä¸Šè??™å?ç­”å?é¡Œï??ä??·é?å»ºè­°?‚å?ç­”ç°¡æ½”å¯¦?¨ã€?;
+    context += '\n\nè«‹ç”¨ç¹ï¿½?ä¸­ï¿½??ï¿½ï¿½??ï¿½æ ¹?ï¿½ä»¥ä¸Šï¿½??ï¿½ï¿½?ç­”ï¿½?é¡Œï¿½??ï¿½ï¿½??ï¿½ï¿½?å»ºè­°?ï¿½ï¿½?ç­”ç°¡æ½”å¯¦?ï¿½ï¿½?;
 
     return context;
 }
@@ -3543,16 +3543,16 @@ async function callGemini(userMessage) {
 
     if (!data || data.error) {
         firstError = typeof data?.error === 'string' ? data.error : (data?.error?.message || 'Unknown error');
-        console.log(`${GEMINI_MODEL} å¤±æ?(${firstError})ï¼Œå??›å???${GEMINI_MODEL_FALLBACK}`);
+        console.log(`${GEMINI_MODEL} å¤±ï¿½?(${firstError})ï¼Œï¿½??ï¿½ï¿½???${GEMINI_MODEL_FALLBACK}`);
         data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
     if (!data || data.error) {
         const secondError = typeof data?.error === 'string' ? data.error : (data?.error?.message || '');
-        throw new Error(firstError || secondError || '?¼å« Gemini å¤±æ?');
+        throw new Error(firstError || secondError || '?ï¿½å« Gemini å¤±ï¿½?');
     }
 
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '?±æ?ï¼Œæ??¡æ??ç??™å€‹å?é¡Œã€?;
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || '?ï¿½ï¿½?ï¼Œï¿½??ï¿½ï¿½??ï¿½ï¿½??ï¿½å€‹ï¿½?é¡Œï¿½?;
 
     // Add AI response to history
     aiChatHistory.push({ role: 'model', parts: [{ text: aiResponse }] });
@@ -3567,7 +3567,7 @@ async function callGemini(userMessage) {
 
 async function callGeminiProxy(requestBody, model) {
     const apiKey = localStorage.getItem('geminiApiKey') || '';
-    if (!apiKey) throw new Error('?ªè¨­å®?API Key');
+    if (!apiKey) throw new Error('?ï¿½è¨­ï¿½?API Key');
 
     const m = model || GEMINI_MODEL;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
@@ -3590,7 +3590,7 @@ async function callGeminiProxy(requestBody, model) {
 async function handleImageUpload(file) {
     // Check API key
     if (!localStorage.getItem('geminiApiKey')) {
-        const key = prompt('é¦–æ¬¡ä½¿ç”¨è«‹è¼¸??Gemini API Keyï¼š\nï¼ˆåˆ° https://aistudio.google.com/apikey ?è²»?³è?ï¼?);
+        const key = prompt('é¦–æ¬¡ä½¿ç”¨è«‹è¼¸??Gemini API Keyï¼š\nï¼ˆåˆ° https://aistudio.google.com/apikey ?ï¿½è²»?ï¿½ï¿½?ï¿½?);
         if (key && key.trim()) {
             localStorage.setItem('geminiApiKey', key.trim());
         } else {
@@ -3606,14 +3606,14 @@ async function handleImageUpload(file) {
     const mode = window._aiImageMode || 'translate';
     window._aiImageMode = null;
 
-    const modeLabel = mode === 'identify' ? '?¯ è¾¨è??™å€‹åœ°?? : '?“· ç¿»è­¯?™å¼µ?–ç?';
+    const modeLabel = mode === 'identify' ? '?ï¿½ï¿½ è¾¨ï¿½??ï¿½å€‹åœ°?? : '?ï¿½ï¿½ ç¿»è­¯?ï¿½å¼µ?ï¿½ï¿½?';
 
     // Show image in chat
     const imgHtml = `<img src="data:${mimeType};base64,${base64}" alt="uploaded image">`;
-    appendAIMessageRaw(`${modeLabel}ï¼?{imgHtml}`, 'user');
+    appendAIMessageRaw(`${modeLabel}ï¿½?{imgHtml}`, 'user');
 
     // Show loading
-    const loadingEl = appendAIMessage(mode === 'identify' ? 'è¾¨è?ä¸?..' : 'ç¿»è­¯ä¸?..', 'bot loading');
+    const loadingEl = appendAIMessage(mode === 'identify' ? 'è¾¨ï¿½?ï¿½?..' : 'ç¿»è­¯ï¿½?..', 'bot loading');
 
     try {
         const response = await callGeminiWithImage(base64, mimeType, mode);
@@ -3621,7 +3621,7 @@ async function handleImageUpload(file) {
         appendAIMessage(response, 'bot');
     } catch (err) {
         loadingEl.remove();
-        appendAIMessage(`???¼ç??¯èª¤ï¼?{err.message}`, 'bot');
+        appendAIMessage(`???ï¿½ï¿½??ï¿½èª¤ï¿½?{err.message}`, 'bot');
         console.error('Gemini image error:', err);
     }
 }
@@ -3651,9 +3651,9 @@ function appendAIMessageRaw(html, type) {
 async function callGeminiWithImage(base64, mimeType, mode) {
     let prompt;
     if (mode === 'identify') {
-        prompt = 'è«‹è¾¨è­˜é€™å¼µ?§ç?ä¸­ç?å»ºç??©ã€ç?ç¤¾ã€å¯ºå»Ÿã€åœ°æ¨™æ??¯é??‚å?è¨´æ??™æ˜¯ä»€éº¼åœ°?¹ã€å??„æ­·?²è??¯å??‰è¶£?„è?è¨Šã€‚ç”¨ç¹é?ä¸­æ??ç?ï¼Œæ ¼å¼æ?æ¥šæ?è®€??;
+        prompt = 'è«‹è¾¨è­˜é€™å¼µ?ï¿½ï¿½?ä¸­ï¿½?å»ºï¿½??ï¿½ã€ï¿½?ç¤¾ã€å¯ºå»Ÿã€åœ°æ¨™ï¿½??ï¿½ï¿½??ï¿½ï¿½?è¨´ï¿½??ï¿½æ˜¯ä»€éº¼åœ°?ï¿½ã€ï¿½??ï¿½æ­·?ï¿½ï¿½??ï¿½ï¿½??ï¿½è¶£?ï¿½ï¿½?è¨Šã€‚ç”¨ç¹ï¿½?ä¸­ï¿½??ï¿½ï¿½?ï¼Œæ ¼å¼ï¿½?æ¥šï¿½?è®€??;
     } else {
-        prompt = 'è«‹ç¿»è­¯é€™å¼µ?–ç?ä¸­ç??€?‰æ—¥??å¤–æ??‡å??ç?é«”ä¸­?‡ã€‚å??œæ˜¯?œå–®ï¼Œè??—å‡ºæ¯é??œç??ç¨±?Œä¸­?‡ç¿»è­¯ã€‚å??œæ˜¯è·¯æ??–æ?ç¤ºç?ï¼Œè?èªªæ??§å®¹?‚æ ¼å¼æ?æ¥šæ?è®€??;
+        prompt = 'è«‹ç¿»è­¯é€™å¼µ?ï¿½ï¿½?ä¸­ï¿½??ï¿½?ï¿½æ—¥??å¤–ï¿½??ï¿½ï¿½??ï¿½ï¿½?é«”ä¸­?ï¿½ã€‚ï¿½??ï¿½æ˜¯?ï¿½å–®ï¼Œï¿½??ï¿½å‡ºæ¯ï¿½??ï¿½ï¿½??ï¿½ç¨±?ï¿½ä¸­?ï¿½ç¿»è­¯ã€‚ï¿½??ï¿½æ˜¯è·¯ï¿½??ï¿½ï¿½?ç¤ºï¿½?ï¼Œï¿½?èªªï¿½??ï¿½å®¹?ï¿½æ ¼å¼ï¿½?æ¥šï¿½?è®€??;
     }
 
     const requestBody = {
@@ -3678,13 +3678,13 @@ async function callGeminiWithImage(base64, mimeType, mode) {
     let data = await callGeminiProxy(requestBody, GEMINI_MODEL);
 
     if (!data || data.error) {
-        console.log(`?–ç??•ç?ï¼?{GEMINI_MODEL} å¤±æ?ï¼Œå??›å???${GEMINI_MODEL_FALLBACK}`);
+        console.log(`?ï¿½ï¿½??ï¿½ï¿½?ï¿½?{GEMINI_MODEL} å¤±ï¿½?ï¼Œï¿½??ï¿½ï¿½???${GEMINI_MODEL_FALLBACK}`);
         data = await callGeminiProxy(requestBody, GEMINI_MODEL_FALLBACK);
     }
 
     if (!data || data.error) {
-        throw new Error(data?.error?.message || '?–ç??•ç?å¤±æ?');
+        throw new Error(data?.error?.message || '?ï¿½ï¿½??ï¿½ï¿½?å¤±ï¿½?');
     }
 
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || '?±æ?ï¼Œç„¡æ³•è¾¨è­˜å??‡å…§å®¹ã€?;
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '?ï¿½ï¿½?ï¼Œç„¡æ³•è¾¨è­˜ï¿½??ï¿½å…§å®¹ï¿½?;
 }

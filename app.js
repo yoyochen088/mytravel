@@ -1712,9 +1712,9 @@ function renderShoppingList() {
 
         if (isEditing) {
             return `
-                <div class="packing-item editing">
-                    <input type="text" class="edit-name" value="${item.item}" style="flex:2;padding:6px;border:1px solid var(--primary);border-radius:4px;">
-                    <input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:4px;">
+                <div class="packing-item editing" style="flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="物品名稱"></div>
+                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類"></div>
                     <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditShopping(${idx})">✓</button>
                 </div>
             `;
@@ -1930,9 +1930,9 @@ function renderPackingList() {
 
         if (isEditing) {
             return `
-                <div class="packing-item editing">
-                    <input type="text" class="edit-name" value="${item.item}" style="flex:2;padding:6px;border:1px solid var(--primary);border-radius:4px;">
-                    <input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類" style="flex:1;padding:6px;border:1px solid var(--border);border-radius:4px;">
+                <div class="packing-item editing" style="flex-wrap:wrap;">
+                    <div class="form-group" style="flex:2;margin:0;"><input type="text" class="edit-name" value="${item.item}" placeholder="物品名稱"></div>
+                    <div class="form-group" style="flex:1;margin:0;"><input type="text" class="edit-cat" value="${item.category || ''}" placeholder="分類"></div>
                     <button class="sched-action-btn edit" onclick="event.stopPropagation();confirmEditPacking(${idx})">✓</button>
                 </div>
             `;

@@ -165,6 +165,11 @@
 
             <!-- More Tab (選單列表) -->
             <section id="tab-more" class="tab-content">
+                <div id="more-sync-status" class="sync-status" style="display:none;margin-bottom:12px;"></div>
+                <div id="more-sync-actions" style="display:none;margin-bottom:12px;text-align:center;">
+                    <button class="tool-btn-sm" onclick="retrySyncQueue()">🔄 重試同步</button>
+                    <button class="tool-btn-sm" onclick="clearSyncQueue()" style="margin-left:8px;">🗑️ 清除</button>
+                </div>
                 <div class="more-menu">
                     <div class="more-menu-item" data-page="trip-dates">
                         <span class="more-icon">✈️</span>
@@ -202,7 +207,7 @@
                         <span class="more-arrow">›</span>
                     </div>
                 </div>
-                <p class="hint" style="text-align:center;margin-top:16px;">版本 v2-59</p>
+                <p class="hint" id="app-version" style="text-align:center;margin-top:16px;"></p>
 
                 <!-- Sub-pages (hidden by default) -->
                 <div id="more-subpage" class="more-subpage" style="display:none;">

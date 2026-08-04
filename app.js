@@ -1,6 +1,7 @@
 // ==================== 旅遊助手 PWA ====================
 
 // --- State ---
+const APP_VERSION = 'v2-61';
 let scheduleData = [];
 let randomPlaces = [];
 let foodList = [];
@@ -22,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initAI();
     initPullToRefresh();
     registerServiceWorker();
+    // Display version
+    const versionEl = document.getElementById('app-version');
+    if (versionEl) versionEl.textContent = '版本 ' + APP_VERSION;
     // User select & data loading
     initUserSelect();
 });
@@ -1495,6 +1499,8 @@ function initPackingList() {
     if (addBtn) {
         addBtn.addEventListener('click', () => {
             $('#packing-form').style.display = 'block';
+            // Save current inputs before adding new row
+            saveCurrentBatchInputs('packing');
             packingBatchItems.push({ item: '', category: '' });
             renderPackingBatchInputs();
         });
@@ -1534,6 +1540,21 @@ function initPackingList() {
             saveBtn.textContent = '全部送出';
         });
     }
+}
+
+// Save current input values back to batch array before re-rendering
+function saveCurrentBatchInputs(type) {
+    const containerId = type === 'packing' ? '#packing-batch-list' : '#shopping-batch-list';
+    const batchArr = type === 'packing' ? packingBatchItems : shoppingBatchItems;
+    const container = $(containerId);
+    if (!container) return;
+    const rows = container.querySelectorAll('.batch-input-row');
+    rows.forEach((row, idx) => {
+        if (batchArr[idx]) {
+            batchArr[idx].item = row.querySelector('.batch-name')?.value || '';
+            batchArr[idx].category = row.querySelector('.batch-cat')?.value || '';
+        }
+    });
 }
 
 function renderPackingBatchInputs() {
@@ -1617,6 +1638,7 @@ function initShoppingList() {
     if (addBtn) {
         addBtn.addEventListener('click', () => {
             $('#shopping-form').style.display = 'block';
+            saveCurrentBatchInputs('shopping');
             shoppingBatchItems.push({ item: '', category: '' });
             renderShoppingBatchInputs();
         });
@@ -3063,15 +3085,21 @@ function getSyncQueue() {
 function showSyncStatus() {
     const el = $('#sync-status');
     const actionsEl = $('#sync-actions');
-    if (!el) return;
+    const moreEl = $('#more-sync-status');
+    const moreActionsEl = $('#more-sync-actions');
     const queue = getSyncQueue();
+
     if (queue.length > 0) {
-        el.style.display = 'block';
-        el.textContent = `⚠️ ${queue.length} 筆待同步`;
+        const msg = `⚠️ ${queue.length} 筆待同步`;
+        if (el) { el.style.display = 'block'; el.textContent = msg; }
         if (actionsEl) actionsEl.style.display = 'block';
+        if (moreEl) { moreEl.style.display = 'block'; moreEl.textContent = msg; }
+        if (moreActionsEl) moreActionsEl.style.display = 'block';
     } else {
-        el.style.display = 'none';
+        if (el) el.style.display = 'none';
         if (actionsEl) actionsEl.style.display = 'none';
+        if (moreEl) moreEl.style.display = 'none';
+        if (moreActionsEl) moreActionsEl.style.display = 'none';
     }
 }
 

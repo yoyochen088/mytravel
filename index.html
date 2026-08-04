@@ -269,7 +269,7 @@
 
     <template id="tpl-packing">
         <div class="tool-section">
-            <div class="tool-header">🧳 行李清單</div>
+            <div class="tool-header" style="display:flex;justify-content:space-between;align-items:center;">🧳 行李清單 <button id="sync-packing-checks" class="tool-btn-sm" style="display:none;">💾 回存</button></div>
             <div id="packing-list" class="packing-list">
                 <p class="hint">載入中...</p>
             </div>
@@ -279,7 +279,7 @@
                     <div class="progress-fill" id="packing-progress-bar"></div>
                 </div>
             </div>
-            <button id="sync-packing-checks" class="action-btn" style="width:100%;margin-top:8px;">🔄 儲存勾選狀態</button>
+            <button id="confirm-delete-packing" class="action-btn" style="width:100%;margin-top:8px;background:#d93025;display:none;">🗑️ 確認刪除已選項目</button>
             <button id="add-packing-btn" class="action-btn" style="width:100%;margin-top:12px;">＋ 新增物品</button>
             <div id="packing-form" class="schedule-form" style="display:none;margin-top:12px;">
                 <div id="packing-batch-list" class="packing-batch-list"></div>
@@ -292,7 +292,7 @@
 
     <template id="tpl-shopping">
         <div class="tool-section">
-            <div class="tool-header">🛍️ 購物清單</div>
+            <div class="tool-header" style="display:flex;justify-content:space-between;align-items:center;">🛍️ 購物清單 <button id="sync-shopping-checks" class="tool-btn-sm" style="display:none;">💾 回存</button></div>
             <div id="shopping-list" class="packing-list">
                 <p class="hint">載入中...</p>
             </div>
@@ -302,7 +302,7 @@
                     <div class="progress-fill" id="shopping-progress-bar"></div>
                 </div>
             </div>
-            <button id="sync-shopping-checks" class="action-btn" style="width:100%;margin-top:8px;">🔄 儲存勾選狀態</button>
+            <button id="confirm-delete-shopping" class="action-btn" style="width:100%;margin-top:8px;background:#d93025;display:none;">🗑️ 確認刪除已選項目</button>
             <button id="add-shopping-btn" class="action-btn" style="width:100%;margin-top:12px;">＋ 新增物品</button>
             <div id="shopping-form" class="schedule-form" style="display:none;margin-top:12px;">
                 <div id="shopping-batch-list" class="packing-batch-list"></div>

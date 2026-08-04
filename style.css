@@ -1252,6 +1252,7 @@ body {
 
 .form-group {
     margin-bottom: 12px;
+    overflow: hidden;
 }
 
 .form-group label {
@@ -1388,6 +1389,11 @@ body {
 .packing-item.checked {
     opacity: 0.5;
     text-decoration: line-through;
+}
+
+.packing-item.marked-delete {
+    background: #fce8e6;
+    border-left: 3px solid #d93025;
 }
 
 .packing-item .check {

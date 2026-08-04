@@ -1488,6 +1488,7 @@ let packingBatchItems = []; // Temp batch for multiple add
 function initPackingList() {
     loadPackingList();
     initSyncPackingChecks();
+    initConfirmDeletePacking();
 
     // Add button - add a new row each time
     const addBtn = $('#add-packing-btn');
@@ -1610,6 +1611,7 @@ let shoppingBatchItems = [];
 function initShoppingList() {
     loadShoppingList();
     initSyncShoppingChecks();
+    initConfirmDeleteShopping();
 
     const addBtn = $('#add-shopping-btn');
     if (addBtn) {
@@ -1691,11 +1693,13 @@ function renderShoppingList() {
     if (!container) return;
     const checked = JSON.parse(localStorage.getItem('shoppingChecked') || '[]');
     const syncBtn = $('#sync-shopping-checks');
+    const deleteBtn = $('#confirm-delete-shopping');
 
     if (shoppingItems.length === 0) {
         container.innerHTML = '<p class="hint">購物清單是空的</p>';
         updateShoppingProgress(0, 0);
         if (syncBtn) syncBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
         return;
     }
 
@@ -1703,16 +1707,66 @@ function renderShoppingList() {
 
     container.innerHTML = shoppingItems.map((item, idx) => {
         const isChecked = checked.includes(idx);
+        const isMarkedDelete = shoppingDeleteMarked.includes(idx);
         return `
-            <div class="packing-item ${isChecked ? 'checked' : ''}" onclick="toggleShopping(${idx})">
+            <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="toggleShopping(${idx})">
                 <div class="check">${isChecked ? '✓' : ''}</div>
                 <span>${item.item}</span>
                 ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
+                <button class="sched-action-btn delete" onclick="event.stopPropagation();markShoppingDelete(${idx})" style="margin-left:8px;">${isMarkedDelete ? '↩' : '🗑️'}</button>
             </div>
         `;
     }).join('');
 
     updateShoppingProgress(checked.filter(id => id < shoppingItems.length).length, shoppingItems.length);
+
+    if (deleteBtn) {
+        deleteBtn.style.display = shoppingDeleteMarked.length > 0 ? 'block' : 'none';
+        deleteBtn.textContent = `🗑️ 確認刪除 ${shoppingDeleteMarked.length} 項`;
+    }
+}
+
+let shoppingDeleteMarked = [];
+
+function markShoppingDelete(idx) {
+    if (shoppingDeleteMarked.includes(idx)) {
+        shoppingDeleteMarked = shoppingDeleteMarked.filter(i => i !== idx);
+    } else {
+        shoppingDeleteMarked.push(idx);
+    }
+    renderShoppingList();
+}
+
+function initConfirmDeleteShopping() {
+    const btn = $('#confirm-delete-shopping');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            if (shoppingDeleteMarked.length === 0) return;
+            if (!confirm(`確定刪除 ${shoppingDeleteMarked.length} 個物品？`)) return;
+
+            btn.disabled = true;
+            btn.textContent = '刪除中...';
+
+            const sorted = [...shoppingDeleteMarked].sort((a, b) => b - a);
+            sorted.forEach(idx => shoppingItems.splice(idx, 1));
+            shoppingItems.forEach((p, i) => p.id = i);
+            shoppingDeleteMarked = [];
+            localStorage.setItem('shoppingChecked', '[]');
+            renderShoppingList();
+
+            const payload = {
+                action: 'batchDeleteShoppingItems',
+                sheetId: window.SHEET_ID,
+                user: currentUser,
+                password: getUserPassword(),
+                indexes: sorted
+            };
+            queueServerWrite(payload, 'delete');
+
+            btn.disabled = false;
+            btn.textContent = '🗑️ 確認刪除已選項目';
+        });
+    }
 }
 
 function toggleShopping(id) {
@@ -1807,30 +1861,83 @@ function renderPackingList() {
     if (!container) return;
     const checked = JSON.parse(localStorage.getItem('packingChecked') || '[]');
     const syncBtn = $('#sync-packing-checks');
+    const deleteBtn = $('#confirm-delete-packing');
 
     if (packingItems.length === 0) {
         container.innerHTML = '<p class="hint">行李清單是空的</p>';
         updatePackingProgress(0, 0);
         if (syncBtn) syncBtn.style.display = 'none';
+        if (deleteBtn) deleteBtn.style.display = 'none';
         return;
     }
 
     if (syncBtn) syncBtn.style.display = 'block';
 
-    container.innerHTML = packingItems.map(item => {
-        const isChecked = checked.includes(item.id);
+    container.innerHTML = packingItems.map((item, idx) => {
+        const isChecked = checked.includes(item.id !== undefined ? item.id : idx);
+        const isMarkedDelete = packingDeleteMarked.includes(idx);
         return `
-            <div class="packing-item ${isChecked ? 'checked' : ''}">
-                <div class="check" onclick="togglePacking(${item.id})">${isChecked ? '✓' : ''}</div>
-                <span onclick="togglePacking(${item.id})">${item.item}</span>
+            <div class="packing-item ${isChecked ? 'checked' : ''} ${isMarkedDelete ? 'marked-delete' : ''}" onclick="togglePacking(${item.id !== undefined ? item.id : idx})">
+                <div class="check">${isChecked ? '✓' : ''}</div>
+                <span>${item.item}</span>
                 ${item.category ? `<span class="place-type" style="margin-left:auto;">${item.category}</span>` : ''}
-                <button class="sched-action-btn edit" onclick="editPackingItem(${item.id})" style="margin-left:8px;">✏️</button>
-                <button class="sched-action-btn delete" onclick="deletePackingItemConfirm(${item.id})">🗑️</button>
+                <button class="sched-action-btn delete" onclick="event.stopPropagation();markPackingDelete(${idx})" style="margin-left:8px;">${isMarkedDelete ? '↩' : '🗑️'}</button>
             </div>
         `;
     }).join('');
 
     updatePackingProgress(checked.filter(id => id < packingItems.length).length, packingItems.length);
+
+    // Show/hide delete confirm button
+    if (deleteBtn) {
+        deleteBtn.style.display = packingDeleteMarked.length > 0 ? 'block' : 'none';
+        deleteBtn.textContent = `🗑️ 確認刪除 ${packingDeleteMarked.length} 項`;
+    }
+}
+
+let packingDeleteMarked = [];
+
+function markPackingDelete(idx) {
+    if (packingDeleteMarked.includes(idx)) {
+        packingDeleteMarked = packingDeleteMarked.filter(i => i !== idx);
+    } else {
+        packingDeleteMarked.push(idx);
+    }
+    renderPackingList();
+}
+
+function initConfirmDeletePacking() {
+    const btn = $('#confirm-delete-packing');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            if (packingDeleteMarked.length === 0) return;
+            if (!confirm(`確定刪除 ${packingDeleteMarked.length} 個物品？`)) return;
+
+            btn.disabled = true;
+            btn.textContent = '刪除中...';
+
+            // Optimistic: remove from local
+            const sorted = [...packingDeleteMarked].sort((a, b) => b - a);
+            sorted.forEach(idx => packingItems.splice(idx, 1));
+            packingItems.forEach((p, i) => p.id = i);
+            packingDeleteMarked = [];
+            localStorage.setItem('packingChecked', '[]');
+            renderPackingList();
+
+            // Background batch delete
+            const payload = {
+                action: 'batchDeletePackingItems',
+                sheetId: window.SHEET_ID,
+                user: currentUser,
+                password: getUserPassword(),
+                indexes: sorted.map(i => i) // already sorted desc
+            };
+            queueServerWrite(payload, 'delete');
+
+            btn.disabled = false;
+            btn.textContent = '🗑️ 確認刪除已選項目';
+        });
+    }
 }
 
 function togglePacking(id) {
